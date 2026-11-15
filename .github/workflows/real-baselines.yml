@@ -7,6 +7,7 @@ on:
     paths:
       - "scripts/build_locked_dataset.py"
       - "scripts/run_real_baselines.py"
+      - "scripts/calibrate_real_baselines.py"
       - "src/zk2/features/**"
       - "src/zk2/models/**"
       - "src/zk2/data/adapters/**"
