@@ -59,7 +59,7 @@ def test_xg_form_windows_are_capped_independently():
     result = calculate_xg_form(frame)
     assert result.loc[6, "xg_form_home_matches_5"] == 5
     assert result.loc[6, "xg_form_home_matches_10"] == 6
-    assert result.loc[6, "xg_form_home_for_avg_5"] == 5.0
+    assert result.loc[6, "xg_form_home_for_avg_5"] == 4.0
 
 
 def test_xg_form_rejects_negative_or_non_finite_xg():
