@@ -43,7 +43,7 @@ def test_adapter_loads_utf8_csv_and_transforms_targets(tmp_path):
     assert result.loc[0, "_y_kg"] == 1
     assert result.loc[0, "_team_home_canonical"] == "Galatasaray"
     assert result.loc[0, "_team_away_canonical"] == "Fenerbahçe"
-    assert result.loc[0, "_league_canonical"] == "Türkiye PTT 1. Lig"
+    assert result.loc[0, "_league_canonical"] == "Türkiye 1. Lig"
     assert result.loc[0, "_season"] == "2013/2014"
     assert result.loc[0, "_odd_H"] == pytest.approx(1.5)
 
