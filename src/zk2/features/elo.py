@@ -88,16 +88,16 @@ def calculate_elo(
         day_deltas: defaultdict[str, float] = defaultdict(float)
         day_count_increments: defaultdict[str, int] = defaultdict(int)
 
-        for row in group.itertuples(index=False):
-            home = getattr(row, "_team_home_canonical")
-            away = getattr(row, "_team_away_canonical")
+        for row in group.to_dict("records"):
+            home = row["_team_home_canonical"]
+            away = row["_team_away_canonical"]
             home_elo = day_ratings.get(home, float(base_elo))
             away_elo = day_ratings.get(away, float(base_elo))
             home_count = day_counts.get(home, 0)
             away_count = day_counts.get(away, 0)
             feature_rows.append(
                 {
-                    "_elo_input_order": getattr(row, "_elo_input_order"),
+                    "_elo_input_order": row["_elo_input_order"],
                     "elo_home_pre": home_elo,
                     "elo_away_pre": away_elo,
                     "elo_diff_pre": home_elo - away_elo,
@@ -106,8 +106,8 @@ def calculate_elo(
                 }
             )
 
-            home_score = pd.to_numeric(pd.Series([getattr(row, "MSE")]), errors="coerce").iloc[0]
-            away_score = pd.to_numeric(pd.Series([getattr(row, "MSD")]), errors="coerce").iloc[0]
+            home_score = pd.to_numeric(pd.Series([row["MSE"]]), errors="coerce").iloc[0]
+            away_score = pd.to_numeric(pd.Series([row["MSD"]]), errors="coerce").iloc[0]
             if pd.isna(home_score) or pd.isna(away_score):
                 continue
 
