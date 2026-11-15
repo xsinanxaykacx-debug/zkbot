@@ -85,6 +85,7 @@ def run_xg_ablation(
     csv_path: Path,
     report_path: Path,
     *,
+    enriched_dataset_path: Path | None = None,
     seed: int = 20261115,
     bootstrap_reps: int = 2000,
 ) -> dict:
@@ -142,6 +143,17 @@ def run_xg_ablation(
     row_indices = joined["_xg_row_index"].to_numpy()
     raw.loc[row_indices, "xg_home"] = joined["xg_home"].to_numpy()
     raw.loc[row_indices, "xg_away"] = joined["xg_away"].to_numpy()
+
+    # Keep the v1 locked dataset immutable; publish a separate xG-enriched
+    # derivative for the league-aware production-model training path.
+    if enriched_dataset_path is not None:
+        enriched_dataset_path.parent.mkdir(parents=True, exist_ok=True)
+        raw.to_csv(
+            enriched_dataset_path,
+            index=False,
+            encoding="utf-8",
+            compression={"method": "gzip", "mtime": 0},
+        )
 
     featured = build_features(raw)
     train, validation, _locked_final_test = chronological_split(featured)
@@ -280,11 +292,13 @@ def main() -> None:
     parser.add_argument("openplay_audit", type=Path)
     parser.add_argument("--csv", type=Path, default=Path("audit-results/xg_lr_paired_rows.csv"))
     parser.add_argument("--report", type=Path, default=Path("audit-results/xg_lr_ablation.json"))
+    parser.add_argument("--enriched-dataset", type=Path)
     parser.add_argument("--seed", type=int, default=20261115)
     parser.add_argument("--bootstrap-reps", type=int, default=2000)
     args = parser.parse_args()
     report = run_xg_ablation(
         args.dataset, args.openplay_audit, args.csv, args.report,
+        enriched_dataset_path=args.enriched_dataset,
         seed=args.seed, bootstrap_reps=args.bootstrap_reps,
     )
     print(json.dumps(report, ensure_ascii=False, indent=2))
