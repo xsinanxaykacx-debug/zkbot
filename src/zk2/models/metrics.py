@@ -30,14 +30,18 @@ def evaluate_probabilities(
         raise ValueError("probabilities must be between 0 and 1.")
     if not np.allclose(probs.sum(axis=1), 1.0, atol=1e-6):
         raise ValueError("Each probability row must sum to 1.")
+    class_to_index = {label: index for index, label in enumerate(class_order)}
     unknown = set(y.tolist()).difference(class_order)
     if unknown:
         raise ValueError(f"Targets contain classes outside class_order: {sorted(unknown)}")
-    class_to_index = {label: index for index, label in enumerate(class_order)}
+    encoded_labels = np.asarray([class_to_index[label] for label in y.tolist()], dtype=int)
     encoded = np.zeros_like(probs)
-    for row_index, label in enumerate(y.tolist()):
-        encoded[row_index, class_to_index[label]] = 1.0
-    loss = log_loss(y, probs, labels=list(class_order))
+    encoded[np.arange(len(encoded_labels)), encoded_labels] = 1.0
+    loss = log_loss(
+        encoded_labels,
+        probs,
+        labels=list(range(len(class_order))),
+    )
     if len(class_order) == 2:
         brier = float(np.mean((probs[:, 1] - encoded[:, 1]) ** 2))
     else:
