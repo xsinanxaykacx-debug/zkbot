@@ -24,8 +24,8 @@ def test_paired_date_block_bootstrap_detects_direction():
         ]),
         "target": [0, 1, 0, 1, 0, 1, 0, 1],
     })
-    lr = np.tile([0.55, 0.45], (8, 1))
-    lgbm = np.tile([0.80, 0.20], (8, 1))
+    lr = np.tile([0.80, 0.20], (8, 1))
+    lgbm = np.tile([0.55, 0.45], (8, 1))
     result = paired_date_block_bootstrap(
         frame, "target", lr, lgbm, (0, 1), n_bootstrap=100, block_dates=2
     )
