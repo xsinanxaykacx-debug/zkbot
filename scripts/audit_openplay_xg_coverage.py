@@ -164,6 +164,11 @@ def audit_frames(
             ])),
             "both_sides_xg_complete": int(openplay["xg_complete"].sum()),
             "both_sides_xg_coverage": float(openplay["xg_complete"].mean()) if len(openplay) else 0.0,
+            "team_name_normalization": [
+                {"raw": str(name), "normalized_key": _normal_team(name)}
+                for name in sorted(set(openplay["home_team"].dropna().astype(str)) |
+                                   set(openplay["away_team"].dropna().astype(str)))
+            ],
         },
         "join": {
             "matched_matches": int(joined["openplay_matched"].sum()),
