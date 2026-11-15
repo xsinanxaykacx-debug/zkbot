@@ -36,13 +36,22 @@ jobs:
           python-version: "3.11"
       - name: Install project
         run: python -m pip install --upgrade pip && pip install -e .
-      - name: Download DATA.csv source
+      - name: Install Parquet reader for xG audit
+        run: python -m pip install pyarrow\n      - name: Download DATA.csv source
         run: curl --fail --location --retry 3 --output DATA.csv https://raw.githubusercontent.com/xsinanxaykacx-debug/trsuper/main/data/csv/DATA.csv
       - name: Build and validate locked dataset
         run: python scripts/build_locked_dataset.py DATA.csv EPL.xlsm --output zk2_locked_dataset.csv.gz --manifest zk2_dataset_manifest.json
       - name: Audit existing sources for xG columns and row coverage
         run: python scripts/audit_xg_source_schema.py DATA.csv EPL.xlsm --json audit-results/xg_source_schema.json --csv audit-results/xg_source_schema.csv
-      - name: Upload locked dataset, manifest, and xG schema audit
+      - name: Download Openplay CC-BY xG release assets
+        run: |
+          mkdir -p provider-data
+          curl --fail --location --retry 3 --output provider-data/matches.parquet https://github.com/nlbair/openplay/releases/download/data-v0.1.0/matches.parquet
+          curl --fail --location --retry 3 --output provider-data/team_match_stats.parquet https://github.com/nlbair/openplay/releases/download/data-v0.1.0/team_match_stats.parquet
+          curl --fail --location --retry 3 --output provider-data/competitions.parquet https://github.com/nlbair/openplay/releases/download/data-v0.1.0/competitions.parquet
+      - name: Audit Openplay match-level xG against EPL.xlsm
+        run: python scripts/audit_openplay_xg_coverage.py EPL.xlsm provider-data/matches.parquet provider-data/team_match_stats.parquet provider-data/competitions.parquet --json audit-results/openplay_xg_coverage.json --csv audit-results/openplay_epl_match_xg.csv
+      - name: Upload locked dataset, manifest, and xG audits
         uses: actions/upload-artifact@v4
         with:
           name: zk2-locked-dataset-v1
