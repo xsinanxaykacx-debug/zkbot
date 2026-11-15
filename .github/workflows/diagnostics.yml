@@ -2,6 +2,13 @@ name: ZK 2.0 post-hoc match diagnostics
 
 on:
   workflow_dispatch:
+  pull_request:
+    branches: [main]
+    paths:
+      - "scripts/export_diagnostics.py"
+      - "src/zk2/diagnostics.py"
+      - "tests/test_export_diagnostics.py"
+      - ".github/workflows/diagnostics.yml"
 
 permissions:
   contents: read
