@@ -3,8 +3,8 @@ import json
 import numpy as np
 import pandas as pd
 
+from zk2.diagnostics import export_diagnostics
 from zk2.models.baseline import FEATURES, TARGET_COLUMNS
-from scripts.export_diagnostics import export_diagnostics
 
 
 def test_export_diagnostics_emits_confirmation_and_test_rows(tmp_path):
