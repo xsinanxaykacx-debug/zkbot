@@ -1,0 +1,36 @@
+name: ZK 2.0 final holdout evaluation
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  final-holdout:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout ZK 2.0 and EPL workbook
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install project
+        run: python -m pip install --upgrade pip && pip install -e .
+      - name: Download DATA.csv source
+        run: curl --fail --location --retry 3 --output DATA.csv https://raw.githubusercontent.com/xsinanxaykacx-debug/trsuper/main/data/csv/DATA.csv
+      - name: Build locked normalized dataset
+        run: python scripts/build_locked_dataset.py DATA.csv EPL.xlsm --output zk2_locked_dataset.csv.gz --manifest zk2_dataset_manifest.json
+      - name: Build chronological features
+        run: python scripts/run_real_baselines.py zk2_locked_dataset.csv.gz --features zk2_features_v1.csv.gz --report zk2_real_baseline_report.json
+      - name: Select models on validation only
+        run: python -m zk2.models.lightgbm_search zk2_features_v1.csv.gz --report zk2_lightgbm_search_report.json
+      - name: Evaluate selected models on final test once
+        run: python scripts/evaluate_selected_test.py zk2_features_v1.csv.gz zk2_lightgbm_search_report.json --report zk2_selected_test_report.json
+      - name: Upload final holdout report
+        uses: actions/upload-artifact@v4
+        with:
+          name: zk2-final-holdout-report
+          path: zk2_selected_test_report.json
+          if-no-files-found: error
