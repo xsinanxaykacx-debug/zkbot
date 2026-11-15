@@ -16,8 +16,8 @@ def team_key(name: object) -> str:
     return " ".join(value.split())
 
 
-# This starter map contains only aliases that are sufficiently unambiguous in
-# the intended competition context. Extend only after reviewing source evidence.
+# Global aliases are restricted to names considered unambiguous. Short or
+# competition-dependent aliases (for example "Rizespor") must be scoped later.
 TEAM_CANONICAL: dict[str, str] = {
     "galatasaray": "Galatasaray",
     "galatasaray sk": "Galatasaray",
@@ -27,7 +27,6 @@ TEAM_CANONICAL: dict[str, str] = {
     "besiktas jk": "Beşiktaş",
     "trabzonspor": "Trabzonspor",
     "caykur rizespor": "Çaykur Rizespor",
-    "rizespor": "Çaykur Rizespor",
     "amed sportif": "Amed Sportif",
     "amedspor": "Amed Sportif",
     "eyupspor": "Eyüpspor",
