@@ -22,13 +22,19 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-      - name: Install openpyxl
-        run: python -m pip install --upgrade pip openpyxl
+      - name: Install project and workbook dependency
+        run: python -m pip install --upgrade pip && pip install -e .
       - name: Audit workbook structure without executing macros
         run: python scripts/audit_epl_xlsm.py EPL.xlsm --output epl_xlsm_audit.json
-      - name: Upload workbook audit
+      - name: Download DATA.csv from source repository
+        run: curl --fail --location --retry 3 --output DATA.csv https://raw.githubusercontent.com/xsinanxaykacx-debug/trsuper/main/data/csv/DATA.csv
+      - name: Compare normalized source identities
+        run: python scripts/audit_source_overlap.py DATA.csv EPL.xlsm --output source_overlap_report.json
+      - name: Upload workbook and overlap audits
         uses: actions/upload-artifact@v4
         with:
-          name: zk2-epl-xlsm-audit
-          path: epl_xlsm_audit.json
+          name: zk2-epl-xlsm-and-source-overlap-audit
+          path: |
+            epl_xlsm_audit.json
+            source_overlap_report.json
           if-no-files-found: error
