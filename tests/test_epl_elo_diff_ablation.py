@@ -43,3 +43,10 @@ def test_draw_bands_use_absolute_pre_match_elo_gap():
     assert rows[0]["matches"] == 2
     assert rows[0]["actual_draw_rate"] == 0.5
     assert rows[-1]["matches"] == 2
+
+
+def test_all_draw_bands_are_non_overlapping_and_ordered():
+    from scripts.run_epl_elo_diff_ablation import DRAW_BANDS
+    assert DRAW_BANDS[0] == -np.inf
+    assert DRAW_BANDS[-1] == np.inf
+    assert all(left < right for left, right in zip(DRAW_BANDS, DRAW_BANDS[1:]))
