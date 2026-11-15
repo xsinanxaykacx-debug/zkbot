@@ -1,6 +1,6 @@
 {
   "dataset_id": "zk2-locked-v1",
-  "created_from_zkbot_commit": "aacd5d9ce1f9f16a173e93b7e8c8a46538b3ebe0",
+  "created_from_zkbot_commit": "30fcf2f63e80b2fcf07de0e80d87028b61313c0d",
   "sources": {
     "DATA.csv": {
       "repository": "xsinanxaykacx-debug/trsuper",
@@ -82,9 +82,9 @@
   },
   "artifact": {
     "file": "zk2_locked_dataset.csv.gz",
-    "sha256": "be93c2c2c9270105a7c093e882036a2b3d2b2892f135e1fade4f90814487b24e",
+    "sha256": "36b02c9e378ef00ad3b9599279042671e8b4b1f2fdff1e61b3b606cfac4bf160",
     "size_bytes": 393993,
-    "workflow_run": "https://github.com/xsinanxaykacx-debug/zkbot/actions/runs/43719608665"
+    "workflow_run": "https://github.com/xsinanxaykacx-debug/zkbot/actions/runs/43719886305"
   },
   "outcome_columns": [
     "home_score",
@@ -101,6 +101,7 @@
     "MSE_MSD_are_score_aliases_for_history_updates_not_model_features": true,
     "closing_odds_kept_separate_from_opening_odds": true,
     "missing_odds_remain_null": true,
-    "target_labels_derived_from_final_scores": true
+    "target_labels_derived_from_final_scores": true,
+    "deterministic_gzip": true
   }
 }
