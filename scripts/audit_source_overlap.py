@@ -25,7 +25,19 @@ def main() -> None:
     common_teams = sorted(tr_teams & epl_teams)
     common_matches = sorted(tr_keys & epl_keys, key=str)
 
+    tr_audit = DataCsvAdapter.audit(tr)
+    epl_audit = EplXlsmAdapter.audit(epl)
     report = {
+        "data_csv_audit": tr_audit,
+        "epl_xlsm_audit": {
+            **epl_audit,
+            "target_1x2_distribution": {str(k): int(v) for k, v in epl["_y_1x2"].value_counts(dropna=False).items()},
+            "target_ou25_distribution": {str(k): int(v) for k, v in epl["_y_ou25"].value_counts(dropna=False).items()},
+            "target_kg_distribution": {str(k): int(v) for k, v in epl["_y_kg"].value_counts(dropna=False).items()},
+            "duplicate_header_columns_preserved": sum("__col_" in column for column in epl.columns),
+            "missing_bet365_ou25_rows": int(epl[["_odd_over25_bet365_open", "_odd_under25_bet365_open"]].isna().any(axis=1).sum()),
+            "missing_pinnacle_ou25_rows": int(epl[["_odd_over25_pinnacle_open", "_odd_under25_pinnacle_open"]].isna().any(axis=1).sum()),
+        },
         "data_csv": {
             "rows": int(len(tr)),
             "date_min": str(tr["_date"].min()),
