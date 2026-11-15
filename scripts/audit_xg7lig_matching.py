@@ -171,7 +171,7 @@ def main() -> None:
             row["_league_key"], row["_season_key"], row["_home_key"], row["_away_key"]
         )
         by_season[season_key_tuple].append(idx)
-        if row["_date_key"]:
+        if pd.notna(row["_date_key"]) and str(row["_date_key"]).strip():
             by_date[(row["_date_key"],) + season_key_tuple[:1] + season_key_tuple[2:]].append(idx)
 
     output = []
@@ -181,7 +181,7 @@ def main() -> None:
 
     for xg_idx, row in xg.iterrows():
         league = str(row["League"])
-        has_date = bool(row["_date_key"])
+        has_date = pd.notna(row["_date_key"]) and bool(str(row["_date_key"]).strip())
         season_tuple = (row["_league_key"], row["_season_key"], row["_home_key"], row["_away_key"])
         candidates = by_date.get((row["_date_key"], row["_league_key"], row["_home_key"], row["_away_key"]), []) if has_date else by_season.get(season_tuple, [])
         candidate_source_counts["date_key" if has_date else "season_team_key"] += 1
