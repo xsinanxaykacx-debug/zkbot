@@ -8,6 +8,7 @@ from zk2.features.elo import calculate_elo
 from zk2.features.form import calculate_form
 from zk2.features.h2h import calculate_h2h
 from zk2.features.league_strength import calculate_league_strength
+from zk2.features.xg_form import calculate_xg_form
 
 
 def build_features(
@@ -16,20 +17,26 @@ def build_features(
     form_windows: tuple[int, ...] = (5, 10),
     h2h_max_history: int = 10,
     league_window: int = 100,
+    xg_windows: tuple[int, ...] = (5, 10),
 ) -> pd.DataFrame:
     """Build all pre-match features while preserving the input row order.
 
-    The input must contain canonical, league-independent team identifiers and
-    a canonical league identifier. Raw scores are consumed only to update
-    histories after each calendar day's feature snapshot has been created.
+    If both xG columns are supplied, append rolling xG features. Missing xG
+    values remain null and do not enter team xG histories.
     """
     required = {"_date", "_team_home_canonical", "_team_away_canonical", "_league_canonical", "MSE", "MSD"}
     missing = sorted(required.difference(frame.columns))
     if missing:
         raise ValueError(f"Missing required pipeline columns: {', '.join(missing)}")
 
+    has_home_xg, has_away_xg = "xg_home" in frame.columns, "xg_away" in frame.columns
+    if has_home_xg != has_away_xg:
+        raise ValueError("Pipeline requires both xg_home and xg_away when xG is supplied.")
+
     result = calculate_elo(frame)
     result = calculate_form(result, windows=form_windows)
     result = calculate_h2h(result, max_history=h2h_max_history)
     result = calculate_league_strength(result, window=league_window)
+    if has_home_xg and has_away_xg:
+        result = calculate_xg_form(result, windows=xg_windows)
     return result
