@@ -55,7 +55,9 @@ def audit_workbook(path: Path) -> dict:
         header = next(iterator, ())
         headers = [str(value).strip() if value is not None else None for value in header]
         counts = Counter()
+        column_counts = Counter()
         team_counts = Counter()
+        invalid_date_samples = []
         dates = []
         first_rows, last_rows = [], []
         nonempty_rows = 0
@@ -75,12 +77,15 @@ def audit_workbook(path: Path) -> dict:
             for index, value in enumerate(row):
                 if value is not None and value != "" and index < len(headers) and headers[index]:
                     counts[headers[index]] += 1
+                    column_counts[index + 1] += 1
             if "Tarih" in record:
                 parsed = parse_date(record["Tarih"])
                 if parsed:
                     dates.append(parsed)
                 else:
                     missing["invalid_date"] += 1
+                    if len(invalid_date_samples) < 25:
+                        invalid_date_samples.append(clean(record["Tarih"]))
             for col in ("EvSahibi", "Deplasman"):
                 value = record.get(col)
                 if value is None or str(value).strip() == "":
@@ -102,7 +107,10 @@ def audit_workbook(path: Path) -> dict:
             "max_column": sheet.max_column,
             "data_rows_nonempty": nonempty_rows,
             "headers": headers,
+            "duplicate_headers": {name: [i + 1 for i, value in enumerate(headers) if value == name] for name, count in Counter(h for h in headers if h).items() if count > 1},
             "nonempty_cells_by_header": dict(counts),
+            "nonempty_cells_by_column_index": {str(index): int(count) for index, count in column_counts.items()},
+            "invalid_date_examples": invalid_date_samples,
             "date_min": min(dates).isoformat() if dates else None,
             "date_max": max(dates).isoformat() if dates else None,
             "invalid_or_missing_date_rows": int(missing["invalid_date"]),
