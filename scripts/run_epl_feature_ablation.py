@@ -7,8 +7,6 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
-from sklearn.metrics import log_loss
-
 from zk2.data.splits import chronological_split
 from zk2.models.baseline import BaselineModel, FEATURES
 from zk2.models.lightgbm_search import _split_validation_by_date
@@ -79,7 +77,7 @@ def run_ablation(features_path: Path, csv_path: Path, json_path: Path, *, seed: 
         losses[name] = _row_losses(y, probabilities)
         metrics[name] = {
             "feature_count": len(selected_features),
-            "log_loss": float(log_loss(y, probabilities, labels=["H", "D", "A"])),
+            "log_loss": float(losses[name].mean()),
             "class_counts": {label: int(np.sum(y == label)) for label in ("H", "D", "A")},
             "class_log_loss": {
                 label: float(losses[name][y == label].mean()) for label in ("H", "D", "A")
