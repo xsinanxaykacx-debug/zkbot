@@ -31,7 +31,7 @@ def _partition_summary(frame: pd.DataFrame) -> dict:
 
 
 def run_baselines(dataset_path: Path, features_path: Path, report_path: Path) -> dict:
-    raw = pd.read_csv(dataset_path, compression="gzip", low_memory=False)
+    raw = pd.read_csv(dataset_path, compression={"method": "gzip", "mtime": 0}, low_memory=False)
     required = {"_date", "_team_home_canonical", "_team_away_canonical", "_league_canonical", "MSE", "MSD", *TARGET_COLUMNS.values()}
     missing = sorted(required.difference(raw.columns))
     if missing:
