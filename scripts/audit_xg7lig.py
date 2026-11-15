@@ -97,21 +97,50 @@ def main() -> None:
     else:
         print("\nUYARI: Lig veya sezon sütunu bulunamadı; çapraz tablo üretilemedi.")
 
+    parsed_dates = None
     if date_col:
-        parsed = pd.to_datetime(df[date_col], errors="coerce", format="mixed", utc=True)
-        valid = parsed.dropna()
-        print("\n=== TARİH KAPSAMI ===")
+        parsed_dates = pd.to_datetime(df[date_col], errors="coerce", format="mixed", utc=True)
+        valid = parsed_dates.dropna()
+        missing_dates = int(parsed_dates.isna().sum())
+        print("\\n=== TARİH KAPSAMI ===")
         print(f"İlk tarih: {valid.min() if not valid.empty else 'YOK'}")
         print(f"Son tarih: {valid.max() if not valid.empty else 'YOK'}")
-        print(f"Geçersiz/boş tarih: {int(parsed.isna().sum())}")
-        if parsed.isna().any():
-            print("Geçersiz tarih örnekleri:")
-            print(df.loc[parsed.isna(), date_col].astype(str).drop_duplicates().head(10).to_string(index=False))
+        print(f"Geçerli tarih: {int(parsed_dates.notna().sum())}")
+        print(f"Geçersiz/boş tarih: {missing_dates}")
         report["date_min"] = str(valid.min()) if not valid.empty else None
         report["date_max"] = str(valid.max()) if not valid.empty else None
-        report["invalid_dates"] = int(parsed.isna().sum())
+        report["valid_dates"] = int(parsed_dates.notna().sum())
+        report["invalid_dates"] = missing_dates
+        if league_col:
+            date_coverage = pd.DataFrame({
+                "league": df[league_col].fillna("<BOŞ>").astype(str),
+                "date_valid": parsed_dates.notna(),
+            }).groupby("league")["date_valid"].agg(["sum", "count"])
+            date_coverage["missing"] = date_coverage["count"] - date_coverage["sum"]
+            date_coverage["coverage_pct"] = (date_coverage["sum"] / date_coverage["count"] * 100).round(2)
+            print("\\n=== LİG BAZINDA TARİH DOLULUĞU ===")
+            print(date_coverage.to_string())
+            report["date_coverage_by_league"] = {
+                str(k): {str(col): (float(v) if col == "coverage_pct" else int(v))
+                         for col, v in row.items()}
+                for k, row in date_coverage.iterrows()
+            }
+        if season_col:
+            season_coverage = pd.DataFrame({
+                "season": df[season_col].fillna("<BOŞ>").astype(str),
+                "date_valid": parsed_dates.notna(),
+            }).groupby("season")["date_valid"].agg(["sum", "count"])
+            season_coverage["missing"] = season_coverage["count"] - season_coverage["sum"]
+            season_coverage["coverage_pct"] = (season_coverage["sum"] / season_coverage["count"] * 100).round(2)
+            print("\\n=== SEZON BAZINDA TARİH DOLULUĞU ===")
+            print(season_coverage.to_string())
+            report["date_coverage_by_season"] = {
+                str(k): {str(col): (float(v) if col == "coverage_pct" else int(v))
+                         for col, v in row.items()}
+                for k, row in season_coverage.iterrows()
+            }
     else:
-        print("\nUYARI: Tarih sütunu otomatik tanınamadı.")
+        print("\\nUYARI: Tarih sütunu otomatik tanınamadı.")
 
     xg_cols = [c for c in cols if "xg" in norm(c)]
     xg_report: dict[str, object] = {}
@@ -139,21 +168,22 @@ def main() -> None:
         id_dups = int(ids.duplicated(keep="first").sum())
         duplicate_report["duplicate_match_id_rows"] = id_dups
         print(f"Tekrar eden MatchID satırı: {id_dups}")
-    if date_col and home_col and away_col:
-        parsed_key_dates = pd.to_datetime(df[date_col], errors="coerce", format="mixed", utc=True)
+    if date_col and home_col and away_col and parsed_dates is not None:
+        valid_mask = parsed_dates.notna()
         key = pd.DataFrame({
-            "date": parsed_key_dates.dt.strftime("%Y-%m-%d"),
-            "home": df[home_col].astype("string").str.strip().str.casefold(),
-            "away": df[away_col].astype("string").str.strip().str.casefold(),
+            "date": parsed_dates.loc[valid_mask].dt.strftime("%Y-%m-%d"),
+            "home": df.loc[valid_mask, home_col].astype("string").str.strip().str.casefold(),
+            "away": df.loc[valid_mask, away_col].astype("string").str.strip().str.casefold(),
         })
         if league_col:
-            key["league"] = df[league_col].astype("string").str.strip().str.casefold()
+            key["league"] = df.loc[valid_mask, league_col].astype("string").str.strip().str.casefold()
         duplicate_rows = int(key.duplicated(keep="first").sum())
-        print(f"Tekrar eden tarih + lig + ev + deplasman satırı: {duplicate_rows}")
-        duplicate_report["duplicate_fixture_key_rows"] = duplicate_rows
+        print(f"Tekrar eden tarih + lig + ev + deplasman (tarihi dolu satırlarda): {duplicate_rows}")
+        duplicate_report["duplicate_fixture_key_rows_valid_dates_only"] = duplicate_rows
+        duplicate_report["rows_excluded_due_to_missing_date"] = int((~valid_mask).sum())
         report["duplicate_match_rows"] = duplicate_rows
     else:
-        print("Tarih / ev sahibi / deplasman alanları tam bulunamadı; tekrar kontrolü atlandı.")
+        print("Tarih / ev sahibi / deplasman alanları tam bulunamadı; fikstür tekrar kontrolü atlandı.")
         report["duplicate_match_rows"] = None
     exact_dups = int(df.duplicated().sum())
     print(f"Birebir aynı tüm-sütun satır tekrarı: {exact_dups}")
