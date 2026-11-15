@@ -248,8 +248,18 @@ def main() -> None:
     args.csv.parent.mkdir(parents=True, exist_ok=True)
     result.to_csv(args.csv, index=False, encoding="utf-8")
 
+    zk_league_counts = zk["_league_key"].value_counts(dropna=False).to_dict()
+    zk_league_season_counts = {}
+    for (league_name, season_name), count in zk.groupby(["_league_key", "_season_key"], dropna=False).size().items():
+        zk_league_season_counts.setdefault(str(league_name), {})[str(season_name)] = int(count)
+    xg_league_mapping = xg.groupby("League")["_league_key"].first().astype(str).to_dict()
+    unmatched_sample = result.loc[result["match_status"].eq("no_candidate")].head(20)
     summary = {
         "xg_rows": int(len(xg)),
+        "xg_league_to_canonical": xg_league_mapping,
+        "zk_league_counts_train_validation": {str(k): int(v) for k, v in zk_league_counts.items()},
+        "zk_league_season_counts_train_validation": zk_league_season_counts,
+        "no_candidate_sample": unmatched_sample.to_dict(orient="records"),
         "zk_train_validation_rows": int(len(zk)),
         "validation_cutoff_inclusive": str(validation_cutoff.date()),
         "final_test_rows_used_for_matching": 0,
