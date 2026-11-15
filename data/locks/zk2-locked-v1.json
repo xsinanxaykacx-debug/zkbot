@@ -1,0 +1,96 @@
+{
+  "dataset_id": "zk2-locked-v1",
+  "created_from_zkbot_commit": "632c067c607950c94d6ad0c60f844586b58c8d91",
+  "sources": {
+    "DATA.csv": {
+      "repository": "xsinanxaykacx-debug/trsuper",
+      "path": "data/csv/DATA.csv",
+      "sha256": "155cebe8046bc295d3eebfa72e33ef4e7a285121240a605da949d6ddf167f115",
+      "rows": 7422,
+      "raw_columns": 353,
+      "normalized_columns": 378,
+      "date_min": "2014-01-11",
+      "date_max": "2025-12-28",
+      "canonical_teams": 67,
+      "targets": {
+        "1X2": {
+          "H": 3301,
+          "D": 1919,
+          "A": 2202
+        },
+        "OU25": {
+          "Over": 3787,
+          "Under": 3635
+        },
+        "BTTS": {
+          "Yes": 3964,
+          "No": 3458
+        }
+      }
+    },
+    "EPL.xlsm": {
+      "repository": "xsinanxaykacx-debug/zkbot",
+      "path": "EPL.xlsm",
+      "sha256": "c9d0aa92d71df262cd74637893d0274d7cde1788208ca5330bbef2d33694182d",
+      "rows": 3850,
+      "raw_columns": 179,
+      "normalized_columns": 232,
+      "date_min": "2015-08-08",
+      "date_max": "2026-09-20",
+      "canonical_teams": 35,
+      "targets": {
+        "1X2": {
+          "H": 1709,
+          "D": 902,
+          "A": 1239
+        },
+        "OU25": {
+          "Over": 2085,
+          "Under": 1765
+        },
+        "BTTS": {
+          "Yes": 2014,
+          "No": 1836
+        }
+      },
+      "duplicate_headers": {
+        "groups": 15,
+        "physical_columns_preserved": 30,
+        "rowwise_overlap": 0,
+        "conflicting_values": 0,
+        "coalesced_summary_fields": 14
+      }
+    }
+  },
+  "validation": {
+    "combined_rows": 11272,
+    "combined_columns": 55,
+    "canonical_teams": 102,
+    "canonical_leagues": [
+      "England Premier League",
+      "Türkiye 1. Lig",
+      "Türkiye Süper Lig"
+    ],
+    "cross_source_team_overlap": 0,
+    "cross_source_exact_match_overlap": 0,
+    "combined_duplicate_match_rows": 0,
+    "missing_targets": 0,
+    "invalid_dates": 0,
+    "missing_scores": 0,
+    "missing_team_identities": 0,
+    "source_rows_preserved": true
+  },
+  "artifact": {
+    "file": "zk2_locked_dataset.csv.gz",
+    "sha256": "4ec27e0460c8636b8f8334494e3662c2954bbe4c68eb9e1e37cf5fbbe8c7b6bc",
+    "size_bytes": 389839,
+    "workflow_run": "https://github.com/xsinanxaykacx-debug/zkbot/actions/runs/43719487823"
+  },
+  "policy": {
+    "raw_source_files_not_committed": true,
+    "post_match_statistics_excluded": true,
+    "closing_odds_kept_separate_from_opening_odds": true,
+    "missing_odds_remain_null": true,
+    "target_labels_derived_from_final_scores": true
+  }
+}
