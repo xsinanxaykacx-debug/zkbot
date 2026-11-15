@@ -15,5 +15,7 @@ jobs:
         with:
           python-version: "3.11"
       - run: python -m pip install -e ".[dev]"
-      - name: Test with coverage (minimum 80 percent)
+      - name: All tests with coverage (minimum 80 percent)
         run: pytest tests/ --cov=zk2 --cov-report=term-missing --cov-fail-under=80
+      - name: Leakage tests (critical summary)
+        run: pytest tests/ -m leakage -v --strict-markers
