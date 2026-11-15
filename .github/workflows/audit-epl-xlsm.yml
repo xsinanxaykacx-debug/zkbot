@@ -7,6 +7,7 @@ on:
     paths:
       - "EPL.xlsm"
       - "scripts/audit_epl_xlsm.py"
+      - "scripts/audit_source_overlap.py"
       - ".github/workflows/audit-epl-xlsm.yml"
 
 permissions:
