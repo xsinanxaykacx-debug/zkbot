@@ -8,8 +8,9 @@
     "workflow_run_id": 43746330335,
     "workflow_run_commit": "a0a32f04bebdac8e3097a0137c037562d5d3d4d6",
     "archive_sha256": "4f4e20e2ce3479296685aaf96ce519a823b2d57bbc28c2a0d589c7e0d3d50999",
-    "model_joblib_sha256": null,
-    "model_joblib_sha256_note": "Not independently extracted and hashed; archive digest above identifies the complete GitHub Actions artifact ZIP."
+    "model_joblib_sha256": "18fcc959c9f78d8b2cd4b6698d6464340c0b7a816024fe7dc4111add4e9c4b5a",
+    "model_joblib_path": "artifacts/zk2_market_models_xg.joblib",
+    "model_joblib_size_bytes": 31434
   },
   "data": {
     "locked_dataset_sha256": "36b02c9e378ef00ad3b9599279042671e8b4b1f2fdff1e61b3b606cfac4bf160",
