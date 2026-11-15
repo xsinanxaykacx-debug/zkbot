@@ -49,11 +49,10 @@ class LightGBMBaseline:
         self.classes_ = np.asarray(CLASS_ORDER[target])
         self.params = {**DEFAULT_PARAMS, **(params or {})}
         objective = "multiclass" if len(self.classes_) > 2 else "binary"
-        self.model = LGBMClassifier(
-            objective=objective,
-            num_class=len(self.classes_) if objective == "multiclass" else None,
-            **self.params,
-        )
+        model_params = {**self.params, "objective": objective}
+        if objective == "multiclass":
+            model_params["num_class"] = len(self.classes_)
+        self.model = LGBMClassifier(**model_params)
         self._is_fitted = False
 
     def _prepare_X(self, X: pd.DataFrame) -> pd.DataFrame:
