@@ -44,6 +44,7 @@ def test_h2h_counts_draws():
     assert result.loc[1, "h2h_draw_rate"] == 1.0
 
 
+@pytest.mark.leakage
 def test_h2h_same_day_meetings_do_not_leak():
     frame = _frame([
         (1, "2024-01-01", "A", "B", 2, 0),
