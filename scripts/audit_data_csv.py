@@ -52,7 +52,8 @@ def build_report(adapter: DataCsvAdapter, transformed: pd.DataFrame) -> dict:
             "invalid": int((~transformed["_is_valid_season"]).sum()),
             "counts": {str(k): int(v) for k, v in transformed["_season"].value_counts(dropna=False).items()},
         },
-        "league_counts": {str(k): int(v) for k, v in transformed["_league"].value_counts(dropna=False).items()},
+        "league_counts_raw": {str(k): int(v) for k, v in transformed["_league"].value_counts(dropna=False).items()},
+        "league_counts_canonical": {str(k): int(v) for k, v in transformed["_league_canonical"].value_counts(dropna=False).items()},
         "scores": {
             "missing_home": int(transformed["MSE"].isna().sum()),
             "missing_away": int(transformed["MSD"].isna().sum()),
