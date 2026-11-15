@@ -1,0 +1,36 @@
+name: DATA.csv team identity audit
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "scripts/audit_teams.py"
+      - "src/zk2/data/team_mapping.py"
+      - ".github/workflows/audit-teams.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  audit-teams:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout ZK 2.0
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install project
+        run: python -m pip install --upgrade pip && pip install -e .
+      - name: Download DATA.csv from source repository
+        run: curl --fail --location --retry 3 --output DATA.csv https://raw.githubusercontent.com/xsinanxaykacx-debug/trsuper/main/data/csv/DATA.csv
+      - name: Run team identity audit
+        run: python scripts/audit_teams.py DATA.csv --output team_audit_report.json
+      - name: Upload team audit report
+        uses: actions/upload-artifact@v4
+        with:
+          name: zk2-data-csv-team-audit
+          path: team_audit_report.json
+          if-no-files-found: error
