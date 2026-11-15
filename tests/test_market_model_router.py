@@ -5,7 +5,6 @@ import pytest
 from zk2.models.baseline import (
     FEATURES,
     XG_FEATURES,
-    BaselineModel,
     MarketModelRouter,
 )
 
@@ -36,7 +35,8 @@ def test_ou_and_kg_route_epl_to_xg_model_and_non_epl_to_xg_free_model():
         assert model.non_epl_model is not None
         assert model.epl_model.features == FEATURES + XG_FEATURES
         assert model.non_epl_model.features == FEATURES
-        probabilities = model.predict_proba(frame.iloc[-12:])
+        mixed_rows = frame.iloc[[0, 1, 2, 90, 91, 92, 93, 94, 95, 96, 97, 98]]
+        probabilities = model.predict_proba(mixed_rows)
         assert probabilities.shape == (12, 2)
         assert np.isfinite(probabilities).all()
         assert np.allclose(probabilities.sum(axis=1), 1.0, atol=1e-6)
