@@ -16,6 +16,7 @@ import pandas as pd
 
 ALIASES = {
     "league": ["league", "lig", "competition", "tournament", "country_league"],
+    "match_id": ["matchid", "match_id", "fixtureid", "gameid"],
     "season": ["season", "sezon", "season_name", "seasonid"],
     "date": ["date", "matchdate", "fixturedate", "tarih", "game_date"],
     "home": ["hometeam", "home", "home_team", "ev", "evsahibi", "hometeamname"],
@@ -97,12 +98,15 @@ def main() -> None:
         print("\nUYARI: Lig veya sezon sütunu bulunamadı; çapraz tablo üretilemedi.")
 
     if date_col:
-        parsed = pd.to_datetime(df[date_col], errors="coerce", dayfirst=True)
+        parsed = pd.to_datetime(df[date_col], errors="coerce", format="mixed", utc=True)
         valid = parsed.dropna()
         print("\n=== TARİH KAPSAMI ===")
         print(f"İlk tarih: {valid.min() if not valid.empty else 'YOK'}")
         print(f"Son tarih: {valid.max() if not valid.empty else 'YOK'}")
         print(f"Geçersiz/boş tarih: {int(parsed.isna().sum())}")
+        if parsed.isna().any():
+            print("Geçersiz tarih örnekleri:")
+            print(df.loc[parsed.isna(), date_col].astype(str).drop_duplicates().head(10).to_string(index=False))
         report["date_min"] = str(valid.min()) if not valid.empty else None
         report["date_max"] = str(valid.max()) if not valid.empty else None
         report["invalid_dates"] = int(parsed.isna().sum())
@@ -129,20 +133,32 @@ def main() -> None:
     report["xg_completeness"] = xg_report
 
     print("\n=== TEKRAR EDEN MAÇ KONTROLÜ ===")
+    duplicate_report: dict[str, object] = {}
+    if found["match_id"]:
+        ids = df[found["match_id"]].astype("string").str.strip()
+        id_dups = int(ids.duplicated(keep="first").sum())
+        duplicate_report["duplicate_match_id_rows"] = id_dups
+        print(f"Tekrar eden MatchID satırı: {id_dups}")
     if date_col and home_col and away_col:
+        parsed_key_dates = pd.to_datetime(df[date_col], errors="coerce", format="mixed", utc=True)
         key = pd.DataFrame({
-            "date": pd.to_datetime(df[date_col], errors="coerce", dayfirst=True).dt.strftime("%Y-%m-%d"),
+            "date": parsed_key_dates.dt.strftime("%Y-%m-%d"),
             "home": df[home_col].astype("string").str.strip().str.casefold(),
             "away": df[away_col].astype("string").str.strip().str.casefold(),
         })
         if league_col:
             key["league"] = df[league_col].astype("string").str.strip().str.casefold()
         duplicate_rows = int(key.duplicated(keep="first").sum())
-        print(f"Tekrar eden maç satırı: {duplicate_rows}")
+        print(f"Tekrar eden tarih + lig + ev + deplasman satırı: {duplicate_rows}")
+        duplicate_report["duplicate_fixture_key_rows"] = duplicate_rows
         report["duplicate_match_rows"] = duplicate_rows
     else:
         print("Tarih / ev sahibi / deplasman alanları tam bulunamadı; tekrar kontrolü atlandı.")
         report["duplicate_match_rows"] = None
+    exact_dups = int(df.duplicated().sum())
+    print(f"Birebir aynı tüm-sütun satır tekrarı: {exact_dups}")
+    duplicate_report["exact_duplicate_rows"] = exact_dups
+    report["duplicate_checks"] = duplicate_report
 
     print("\n=== ÖRNEK İLK 5 SATIR ===")
     print(df.head(5).to_string(index=False))
