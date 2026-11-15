@@ -76,7 +76,6 @@
     "pull_request_status_at_freeze": "open",
     "pull_request_merged": false,
     "intended_tag": "zk2-v1.0",
-    "tag_target_policy": "Tag the commit that adds this freeze manifest, not model_code_commit.",
-    "tag_target_commit": "91a576942eeda037430188a555cffccc7671660f"
+    "tag_target_policy": "Create annotated tag zk2-v1.0 on the commit that contains this finalized manifest; record that commit SHA in the tag/release metadata, not inside this self-referential file."
   }
 }
