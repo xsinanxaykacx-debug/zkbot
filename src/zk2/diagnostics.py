@@ -61,6 +61,10 @@ def _identity_columns(frame: pd.DataFrame) -> pd.DataFrame:
 def _partition_diagnostics(frame: pd.DataFrame, partition: str, models: dict[str, BaselineModel]):
     result = _identity_columns(frame)
     result.insert(0, "partition", partition)
+    # Preserve the exact pre-match inputs so source/season/team diagnostics can
+    # compare feature distributions without rebuilding or changing predictions.
+    for feature in FEATURES:
+        result[f"feature__{feature}"] = pd.to_numeric(frame[feature], errors="coerce").to_numpy()
     metrics = {
         "rows": int(len(frame)),
         "date_min": str(pd.to_datetime(frame["_date"]).min().date()),
