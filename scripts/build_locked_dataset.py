@@ -55,11 +55,13 @@ def build_locked_dataset(csv_path: Path, xlsm_path: Path, output_path: Path, man
 
     tr_audit = DataCsvAdapter.audit(tr)
     epl_audit = EplXlsmAdapter.audit(epl)
-    for name, report in (("DATA.csv", tr_audit), ("EPL.xlsm", epl_audit)):
+    tr_duplicate_rows = int(tr.duplicated(["_date_only", "_team_home_canonical", "_team_away_canonical"], keep=False).sum())
+    epl_duplicate_rows = int(epl.duplicated(["_date_only", "_team_home_canonical", "_team_away_canonical"], keep=False).sum())
+    for name, report, duplicate_rows in (("DATA.csv", tr_audit, tr_duplicate_rows), ("EPL.xlsm", epl_audit, epl_duplicate_rows)):
         if report["invalid_date_rows"] or report.get("missing_season_rows", 0) or report["missing_score_rows"] or report["missing_home_team_rows"] or report["missing_away_team_rows"]:
             raise ValueError(f"{name} failed core row-quality validation: {report}")
-        if report["duplicate_date_home_away_rows"]:
-            raise ValueError(f"{name} contains duplicate date/home/away match keys")
+        if duplicate_rows:
+            raise ValueError(f"{name} contains duplicate date/home/away match keys: {duplicate_rows}")
 
     tr_teams = set(tr["_team_home_canonical"]) | set(tr["_team_away_canonical"])
     epl_teams = set(epl["_team_home_canonical"]) | set(epl["_team_away_canonical"])
