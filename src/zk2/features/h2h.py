@@ -44,7 +44,7 @@ def calculate_h2h(frame: pd.DataFrame, *, max_history: int = 10) -> pd.DataFrame
 
     work = frame.copy()
     work["_h2h_order"] = range(len(work))
-    work["_h2h_date"] = pd.to_datetime(work["_date"], errors="coerce")
+    work["_h2h_date"] = pd.to_datetime(work["_date"], errors="coerce").dt.normalize()
     if work["_h2h_date"].isna().any():
         raise ValueError("H2H input contains missing or invalid dates.")
     if work[["_team_home_canonical", "_team_away_canonical"]].isna().any().any():
