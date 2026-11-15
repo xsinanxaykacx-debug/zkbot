@@ -51,10 +51,10 @@ def audit_teams(path: Path) -> dict:
         "unique_raw_names_union": len(counts),
         "unique_canonical_names_after_current_aliases": len(canonical_unique),
         "raw_names_mapped_by_alias": sum(1 for name in counts if team_key(name) in TEAM_CANONICAL),
-        "raw_names_unmapped": len(unmapped),
-        "unmapped_teams": unmapped,
+        "raw_names_without_explicit_alias_rule": len(unmapped),
+        "names_without_explicit_alias_rule": unmapped,
         "all_team_name_records": records,
-        "note": "Unmapped names are review candidates, not automatic aliases. Do not merge names based on fuzzy similarity.",
+        "note": "Names without an explicit alias rule remain their own canonical identity. Review possible historical renames separately; never merge by fuzzy similarity.",
     }
 
 
@@ -66,9 +66,9 @@ def main() -> None:
     report = audit_teams(args.csv_path)
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
-    print(json.dumps({k: v for k, v in report.items() if k not in ("all_team_name_records", "unmapped_teams")}, ensure_ascii=False, indent=2))
-    print("\nUNMAPPED TEAM LABELS:")
-    for item in report["unmapped_teams"]:
+    print(json.dumps({k: v for k, v in report.items() if k not in ("all_team_name_records", "names_without_explicit_alias_rule")}, ensure_ascii=False, indent=2))
+    print("\nTEAM LABELS WITHOUT AN EXPLICIT ALIAS RULE:")
+    for item in report["names_without_explicit_alias_rule"]:
         print(f'{item["raw_name"]}\t{item["appearances_home_and_away"]}')
 
 
