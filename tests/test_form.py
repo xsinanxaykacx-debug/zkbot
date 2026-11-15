@@ -30,8 +30,8 @@ def test_form_is_team_perspective_when_venue_changes():
     ])
     result = calculate_form(frame)
     assert result.loc[1, "form_away_pts_avg_5"] == 0.0
-    assert result.loc[1, "form_away_gf_avg_5"] == 2.0
-    assert result.loc[1, "form_away_ga_avg_5"] == 0.0
+    assert result.loc[1, "form_away_gf_avg_5"] == 0.0
+    assert result.loc[1, "form_away_ga_avg_5"] == 2.0
 
 
 def test_same_day_form_updates_are_deferred():
@@ -70,3 +70,15 @@ def test_form_rejects_invalid_date():
     frame = _frame([(1, "bad-date", "A", "B", 1, 0)])
     with pytest.raises(ValueError, match="invalid dates"):
         calculate_form(frame)
+
+
+def test_same_calendar_day_different_times_do_not_leak():
+    frame = _frame([
+        (1, "2024-01-01 10:00", "A", "B", 3, 0),
+        (2, "2024-01-01 20:00", "A", "C", 0, 2),
+        (3, "2024-01-02 09:00", "A", "D", 1, 1),
+    ])
+    result = calculate_form(frame)
+    assert pd.isna(result.loc[0, "form_home_pts_avg_5"])
+    assert pd.isna(result.loc[1, "form_home_pts_avg_5"])
+    assert result.loc[2, "form_home_matches_5"] == 2
