@@ -6,7 +6,7 @@ import json
 from pathlib import Path
 
 from zk2.data.adapters.data_csv import DataCsvAdapter
-from zk2.data.adapters.epl_xlsm import EplXlsmAdapter
+from zk2.data.adapters.epl_xlsm import DUPLICATE_SUMMARY_COLUMNS, EplXlsmAdapter
 
 
 def main() -> None:
@@ -27,6 +27,9 @@ def main() -> None:
 
     tr_audit = DataCsvAdapter.audit(tr)
     epl_audit = EplXlsmAdapter.audit(epl)
+    epl_ou_label = epl["AÜ"].astype("string").str.strip().str.upper() if "AÜ" in epl.columns else None
+    epl_expected_ou_label = epl["_y_ou25"].map({1: "ÜST", 0: "ALT"}).astype("string")
+    epl_ou_label_mismatch = int((epl_ou_label.notna() & epl_expected_ou_label.notna() & epl_ou_label.ne(epl_expected_ou_label)).sum()) if epl_ou_label is not None else None
     report = {
         "data_csv_audit": tr_audit,
         "epl_xlsm_audit": {
@@ -35,6 +38,8 @@ def main() -> None:
             "target_ou25_distribution": {str(k): int(v) for k, v in epl["_y_ou25"].value_counts(dropna=False).items()},
             "target_kg_distribution": {str(k): int(v) for k, v in epl["_y_kg"].value_counts(dropna=False).items()},
             "duplicate_header_columns_preserved": sum("__col_" in column for column in epl.columns),
+            "coalesced_market_summary_nonempty_counts": {name: int(epl[name].notna().sum()) for name in DUPLICATE_SUMMARY_COLUMNS if name in epl.columns},
+            "source_ou_label_mismatches_vs_score_target": epl_ou_label_mismatch,
             "missing_bet365_ou25_rows": int(epl[["_odd_over25_bet365_open", "_odd_under25_bet365_open"]].isna().any(axis=1).sum()),
             "missing_pinnacle_ou25_rows": int(epl[["_odd_over25_pinnacle_open", "_odd_under25_pinnacle_open"]].isna().any(axis=1).sum()),
         },
