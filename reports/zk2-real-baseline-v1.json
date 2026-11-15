@@ -1,0 +1,79 @@
+{
+  "dataset_file": "zk2_locked_dataset.csv.gz",
+  "dataset_sha256": "36b02c9e378ef00ad3b9599279042671e8b4b1f2fdff1e61b3b606cfac4bf160",
+  "rows": 11272,
+  "features_count": 32,
+  "split": {
+    "train": {
+      "rows": 8177,
+      "date_min": "2014-01-11",
+      "date_max": "2022-10-18"
+    },
+    "validation": {
+      "rows": 1545,
+      "date_min": "2022-10-19",
+      "date_max": "2024-04-08"
+    },
+    "test": {
+      "rows": 1550,
+      "date_min": "2024-04-12",
+      "date_max": "2026-09-20"
+    },
+    "policy": "70/15/15 chronological split by distinct match dates; no shuffled folds"
+  },
+  "markets": {
+    "1x2": {
+      "class_order": [
+        "H",
+        "D",
+        "A"
+      ],
+      "validation": {
+        "n": 1545,
+        "log_loss": 0.9977243832451491,
+        "brier": 0.594518288899803
+      },
+      "test": {
+        "n": 1550,
+        "log_loss": 1.004611790085542,
+        "brier": 0.6008650497996254
+      }
+    },
+    "ou25": {
+      "class_order": [
+        0,
+        1
+      ],
+      "validation": {
+        "n": 1545,
+        "log_loss": 0.690206581607355,
+        "brier": 0.24847578635748888
+      },
+      "test": {
+        "n": 1550,
+        "log_loss": 0.6911547010809999,
+        "brier": 0.24891143891561693
+      }
+    },
+    "kg": {
+      "class_order": [
+        0,
+        1
+      ],
+      "validation": {
+        "n": 1545,
+        "log_loss": 0.6901658292513593,
+        "brier": 0.24849231859785728
+      },
+      "test": {
+        "n": 1550,
+        "log_loss": 0.6931919861625023,
+        "brier": 0.24999400749269546
+      }
+    }
+  },
+  "feature_file": "zk2_features_v1.csv.gz",
+  "feature_file_sha256": "d196553245f3b890de90d5db183bda87236d1b7e65a8098581e758d54e239459",
+  "workflow_run": "https://github.com/xsinanxaykacx-debug/zkbot/actions/runs/43719891122",
+  "note": "First untuned and uncalibrated logistic-regression baselines. Metrics are not profitability estimates and have not yet been compared against implied-odds or naive-prior baselines."
+}
