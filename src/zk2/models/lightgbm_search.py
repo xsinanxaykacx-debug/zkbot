@@ -104,3 +104,17 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+
+
+def main() -> None:
+    import argparse
+
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("features", type=Path)
+    parser.add_argument("--report", type=Path, default=Path("zk2_lightgbm_search_report.json"))
+    args = parser.parse_args()
+    print(json.dumps(run_validation_search(args.features, args.report), ensure_ascii=False, indent=2))
+
+
+if __name__ == "__main__":
+    main()
