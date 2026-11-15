@@ -59,6 +59,8 @@ def audit_workbook(path: Path) -> dict:
         team_counts = Counter()
         invalid_date_samples = []
         dates = []
+        duplicate_positions = {name: [i for i, value in enumerate(headers) if value == name] for name, count in Counter(h for h in headers if h).items() if count > 1}
+        duplicate_stats = {name: {"first_filled": 0, "second_filled": 0, "both_filled": 0, "first_only": 0, "second_only": 0, "both_conflict": 0} for name in duplicate_positions}
         first_rows, last_rows = [], []
         nonempty_rows = 0
         missing = Counter()
@@ -74,6 +76,17 @@ def audit_workbook(path: Path) -> dict:
             last_rows.append({"row": row_number, "values": [clean(v) for v in row]})
             if len(last_rows) > 5:
                 last_rows.pop(0)
+            for name, positions in duplicate_positions.items():
+                if len(positions) == 2:
+                    first, second = (row[i] if i < len(row) else None for i in positions)
+                    first_ok = first is not None and first != ""
+                    second_ok = second is not None and second != ""
+                    duplicate_stats[name]["first_filled"] += int(first_ok)
+                    duplicate_stats[name]["second_filled"] += int(second_ok)
+                    duplicate_stats[name]["both_filled"] += int(first_ok and second_ok)
+                    duplicate_stats[name]["first_only"] += int(first_ok and not second_ok)
+                    duplicate_stats[name]["second_only"] += int(second_ok and not first_ok)
+                    duplicate_stats[name]["both_conflict"] += int(first_ok and second_ok and first != second)
             for index, value in enumerate(row):
                 if value is not None and value != "" and index < len(headers) and headers[index]:
                     counts[headers[index]] += 1
@@ -107,7 +120,8 @@ def audit_workbook(path: Path) -> dict:
             "max_column": sheet.max_column,
             "data_rows_nonempty": nonempty_rows,
             "headers": headers,
-            "duplicate_headers": {name: [i + 1 for i, value in enumerate(headers) if value == name] for name, count in Counter(h for h in headers if h).items() if count > 1},
+            "duplicate_headers": {name: [i + 1 for i in positions] for name, positions in duplicate_positions.items()},
+            "duplicate_header_rowwise_stats": duplicate_stats,
             "nonempty_cells_by_header": dict(counts),
             "nonempty_cells_by_column_index": {str(index): int(count) for index, count in column_counts.items()},
             "invalid_date_examples": invalid_date_samples,
