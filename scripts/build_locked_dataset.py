@@ -92,7 +92,7 @@ def build_locked_dataset(csv_path: Path, xlsm_path: Path, output_path: Path, man
         raise ValueError("Combined dataset contains duplicate match keys")
 
     output_path.parent.mkdir(parents=True, exist_ok=True)
-    combined.to_csv(output_path, index=False, encoding="utf-8", compression="gzip")
+    combined.to_csv(output_path, index=False, encoding="utf-8", compression={"method": "gzip", "mtime": 0})
     odds_columns = [c for c in combined.columns if c.startswith("_odd_") or c.startswith("_market_") or c == "_asian_handicap_line"]
     manifest = {
         "dataset_id": "zk2-locked-v1",
