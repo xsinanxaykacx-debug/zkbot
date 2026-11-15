@@ -42,5 +42,7 @@ def test_export_diagnostics_emits_confirmation_and_test_rows(tmp_path):
     assert diagnostics["match_id"].is_unique
     assert {"p_H", "p_D", "p_A", "p_ou25_over", "p_kg_yes"}.issubset(diagnostics.columns)
     assert {"_y_1x2", "_y_ou25", "_y_kg", "ll_1x2", "ll_ou25", "ll_kg"}.issubset(diagnostics.columns)
+    assert {f"feature__{feature}" for feature in FEATURES}.issubset(diagnostics.columns)
+    assert diagnostics[[f"feature__{feature}" for feature in FEATURES]].notna().any().any()
     assert summary["partitions"]["final_test"]["rows"] > 0
     assert json.loads(summary_path.read_text(encoding="utf-8")) == summary
