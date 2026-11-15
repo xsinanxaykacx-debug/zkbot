@@ -48,8 +48,7 @@ def main() -> None:
         raise SystemExit(f"CSV bulunamadı: {path}")
 
     # Sniff delimiter; tolerate UTF-8 BOM and common Windows exports.
-    df = pd.read_csv(path, encoding="utf-8-sig", sep=None, engine="python",
-                     low_memory=False)
+    df = pd.read_csv(path, encoding="utf-8-sig", sep=None, engine="python")
     cols = [str(c) for c in df.columns]
     found = {key: find_column(cols, aliases) for key, aliases in ALIASES.items()}
 
