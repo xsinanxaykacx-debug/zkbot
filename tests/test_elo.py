@@ -38,6 +38,7 @@ def test_team_rating_continues_across_league_change():
     assert result.loc[1, "elo_home_pre"] > 1500.0
 
 
+@pytest.mark.leakage
 def test_future_matches_do_not_change_past_pre_match_features():
     frame = _matches([
         (1, "2024-01-01", "A", "B", 5, 0),
@@ -49,6 +50,7 @@ def test_future_matches_do_not_change_past_pre_match_features():
     assert result.loc[2, "elo_home_pre"] < result.loc[1, "elo_home_pre"]
 
 
+@pytest.mark.leakage
 def test_same_day_fixtures_use_one_rating_snapshot():
     frame = _matches([
         (1, "2024-01-01", "A", "B", 5, 0),
@@ -58,7 +60,6 @@ def test_same_day_fixtures_use_one_rating_snapshot():
     result = calculate_elo(frame)
     assert result.loc[0, "elo_home_pre"] == 1500.0
     assert result.loc[1, "elo_home_pre"] == 1500.0
-    # Both same-day outcomes are applied only after both fixtures are scored.
     assert result.loc[2, "elo_home_pre"] == pytest.approx(1500.0)
 
 
@@ -72,6 +73,7 @@ def test_missing_scores_do_not_update_rating_or_match_count():
     assert result.loc[1, "elo_home_match_count"] == 0
 
 
+@pytest.mark.leakage
 def test_same_day_input_order_does_not_change_next_day_rating():
     rows = [
         (1, "2024-01-01", "A", "B", 3, 0),
