@@ -41,3 +41,8 @@ pytest
 The normalized, leakage-conscious combined dataset is built by GitHub Actions from the pinned source-file SHA-256 values recorded in [data/locks/zk2-locked-v1.json](data/locks/zk2-locked-v1.json). The compressed CSV and manifest are published as the `zk2-locked-dataset-v1` workflow artifact; raw source files are not duplicated into the repository. The lock contains 11,272 matches from DATA.csv and EPL.xlsm, with zero cross-source team overlap, zero exact-match overlap, zero duplicate match keys, and no missing targets.
 
 Rebuild with the **Build locked ZK 2.0 dataset** workflow. Do not overwrite the v1 manifest or dataset hash; create a new lock version if either source file changes.
+
+
+## First real-data baselines
+
+The first untuned logistic baselines use 32 chronological Elo/Form/H2H/league-strength features and a 70/15/15 split by distinct dates. Test results: **1X2 LogLoss 1.0046 / Brier 0.6009**, **OU 2.5 LogLoss 0.6912 / Brier 0.2489**, **BTTS LogLoss 0.6932 / Brier 0.2500**. These are initial model baselines, not calibrated or profitable betting strategies. They have not yet been compared with market-implied probabilities or naive-prior baselines. See [reports/zk2-real-baseline-v1.json](reports/zk2-real-baseline-v1.json) and [the real-data workflow](https://github.com/xsinanxaykacx-debug/zkbot/actions/runs/43719891122).
