@@ -3,7 +3,7 @@ name: Audit xg7lig matching against ZK train-validation data
 on:
   workflow_dispatch:
   pull_request:
-    branches: [main]
+    branches: [main, "research/xg7lig-audit"]
     paths:
       - "xg7lig.csv"
       - "scripts/audit_xg7lig_matching.py"
