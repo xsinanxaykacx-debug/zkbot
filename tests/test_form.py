@@ -11,6 +11,7 @@ def _frame(rows):
     ])
 
 
+@pytest.mark.leakage
 def test_form_uses_only_previous_matches():
     frame = _frame([
         (1, "2024-01-01", "A", "B", 2, 0),
@@ -34,6 +35,7 @@ def test_form_is_team_perspective_when_venue_changes():
     assert result.loc[1, "form_away_ga_avg_5"] == 2.0
 
 
+@pytest.mark.leakage
 def test_same_day_form_updates_are_deferred():
     frame = _frame([
         (1, "2024-01-01", "A", "B", 4, 0),
@@ -72,6 +74,7 @@ def test_form_rejects_invalid_date():
         calculate_form(frame)
 
 
+@pytest.mark.leakage
 def test_same_calendar_day_different_times_do_not_leak():
     frame = _frame([
         (1, "2024-01-01 10:00", "A", "B", 3, 0),
