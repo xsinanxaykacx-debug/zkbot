@@ -6,13 +6,16 @@ on:
     branches: [main]
     paths:
       - "scripts/audit_xg_source_schema.py"
+      - "scripts/audit_openplay_xg_coverage.py"
       - "tests/test_xg_source_schema.py"
+      - "tests/test_openplay_xg_coverage.py"
       - ".github/workflows/build-locked-dataset.yml"
   push:
     branches: [main]
     paths:
       - "scripts/build_locked_dataset.py"
       - "scripts/audit_xg_source_schema.py"
+      - "scripts/audit_openplay_xg_coverage.py"
       - "src/zk2/data/adapters/data_csv.py"
       - "src/zk2/data/adapters/epl_xlsm.py"
       - "src/zk2/data/team_mapping.py"
@@ -37,7 +40,8 @@ jobs:
       - name: Install project
         run: python -m pip install --upgrade pip && pip install -e .
       - name: Install Parquet reader for xG audit
-        run: python -m pip install pyarrow\n      - name: Download DATA.csv source
+        run: python -m pip install pyarrow
+      - name: Download DATA.csv source
         run: curl --fail --location --retry 3 --output DATA.csv https://raw.githubusercontent.com/xsinanxaykacx-debug/trsuper/main/data/csv/DATA.csv
       - name: Build and validate locked dataset
         run: python scripts/build_locked_dataset.py DATA.csv EPL.xlsm --output zk2_locked_dataset.csv.gz --manifest zk2_dataset_manifest.json
@@ -60,4 +64,6 @@ jobs:
             zk2_dataset_manifest.json
             audit-results/xg_source_schema.json
             audit-results/xg_source_schema.csv
+            audit-results/openplay_xg_coverage.json
+            audit-results/openplay_epl_match_xg.csv
           if-no-files-found: error
