@@ -15,5 +15,5 @@ jobs:
         with:
           python-version: "3.11"
       - run: python -m pip install -e ".[dev]"
-      - name: Test with coverage (measurement only)
-        run: pytest tests/ --cov=zk2 --cov-report=term-missing
+      - name: Test with coverage (minimum 80 percent)
+        run: pytest tests/ --cov=zk2 --cov-report=term-missing --cov-fail-under=80
