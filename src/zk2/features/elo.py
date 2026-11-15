@@ -66,7 +66,7 @@ def calculate_elo(
 
     work = frame.copy()
     work["_elo_input_order"] = range(len(work))
-    work["_elo_date"] = pd.to_datetime(work["_date"], errors="coerce")
+    work["_elo_date"] = pd.to_datetime(work["_date"], errors="coerce").dt.normalize()
     if work["_elo_date"].isna().any():
         raise ValueError("Elo input contains missing or invalid dates.")
     if work[["_team_home_canonical", "_team_away_canonical"]].isna().any().any():
