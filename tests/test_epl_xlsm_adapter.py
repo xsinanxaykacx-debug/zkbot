@@ -59,3 +59,24 @@ def test_epl_adapter_audit_keeps_all_rows(tmp_path):
     assert report["rows"] == 3
     assert report["invalid_date_rows"] == 1
     assert report["missing_score_rows"] == 1
+
+
+def test_duplicate_summary_columns_coalesce_when_disjoint():
+    import pandas as pd
+
+    from zk2.data.adapters.epl_xlsm import coalesce_duplicate_numeric_columns
+
+    frame = pd.DataFrame({"old": [1.5, None, 2.1], "new": [None, 1.7, 2.1]})
+    result = coalesce_duplicate_numeric_columns(frame, "old", "new")
+    assert result.tolist() == [1.5, 1.7, 2.1]
+
+
+def test_duplicate_summary_columns_reject_conflicting_overlap():
+    import pandas as pd
+    import pytest
+
+    from zk2.data.adapters.epl_xlsm import coalesce_duplicate_numeric_columns
+
+    frame = pd.DataFrame({"old": [1.5], "new": [1.6]})
+    with pytest.raises(ValueError, match="Conflicting values"):
+        coalesce_duplicate_numeric_columns(frame, "old", "new")
