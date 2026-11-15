@@ -114,8 +114,8 @@ def audit_frames(
     )
     joined["openplay_matched"] = joined["_merge"].eq("both")
     joined["score_match"] = (
-        joined["home_score"].eq(joined["home_score_openplay"])
-        & joined["away_score"].eq(joined["away_score_openplay"])
+        joined["home_score_epl"].eq(joined["home_score_openplay"])
+        & joined["away_score_epl"].eq(joined["away_score_openplay"])
     )
     joined["clean_xg_match"] = (
         joined["openplay_matched"] & joined["xg_complete"].fillna(False) & joined["score_match"]
