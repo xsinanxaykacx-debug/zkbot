@@ -8,6 +8,7 @@ on:
       - "scripts/build_locked_dataset.py"
       - "scripts/run_real_baselines.py"
       - "scripts/calibrate_real_baselines.py"
+      - "scripts/run_lightgbm_benchmark.py"
       - "src/zk2/features/**"
       - "src/zk2/models/**"
       - "src/zk2/data/adapters/**"
@@ -40,6 +41,8 @@ jobs:
         run: python scripts/compare_market.py zk2_features_v1.csv.gz --report zk2_market_comparison.json
       - name: Compare Platt and isotonic calibration
         run: python scripts/calibrate_real_baselines.py zk2_features_v1.csv.gz --report zk2_calibration_report.json
+      - name: Benchmark LightGBM against logistic regression
+        run: python scripts/run_lightgbm_benchmark.py zk2_features_v1.csv.gz --report zk2_lightgbm_report.json
       - name: Upload locked data, features, and baseline report
         uses: actions/upload-artifact@v4
         with:
@@ -51,4 +54,5 @@ jobs:
             zk2_real_baseline_report.json
             zk2_market_comparison.json
             zk2_calibration_report.json
+            zk2_lightgbm_report.json
           if-no-files-found: error
