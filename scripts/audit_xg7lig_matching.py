@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """Read-only xg7lig-to-ZK source matching audit.
 
+CI execution branch marker: trigger isolated source-match audit only.
+
 Only the chronological train + validation time range is eligible for matching.
 The locked final-test partition is excluded before any score key is constructed.
 No model is trained, tuned, or scored.
