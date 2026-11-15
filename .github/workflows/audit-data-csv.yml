@@ -11,7 +11,7 @@ on:
 
 permissions:
   contents: read
- njobs:
+jobs:
   audit-data:
     runs-on: ubuntu-latest
     steps:
