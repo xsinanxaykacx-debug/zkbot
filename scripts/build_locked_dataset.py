@@ -50,8 +50,10 @@ def prepare_source(frame: pd.DataFrame, source_name: str, source_row_column: str
 def build_locked_dataset(csv_path: Path, xlsm_path: Path, output_path: Path, manifest_path: Path) -> dict:
     csv_sha = sha256_file(csv_path)
     xlsm_sha = sha256_file(xlsm_path)
-    tr = DataCsvAdapter(csv_path).load().transform()
-    epl = EplXlsmAdapter(xlsm_path).load().transform()
+    tr_adapter = DataCsvAdapter(csv_path).load()
+    epl_adapter = EplXlsmAdapter(xlsm_path).load()
+    tr = tr_adapter.transform()
+    epl = epl_adapter.transform()
 
     tr_audit = DataCsvAdapter.audit(tr)
     epl_audit = EplXlsmAdapter.audit(epl)
@@ -99,7 +101,8 @@ def build_locked_dataset(csv_path: Path, xlsm_path: Path, output_path: Path, man
                 "path": "data/csv/DATA.csv",
                 "sha256": csv_sha,
                 "rows": int(len(tr)),
-                "columns": int(len(tr.columns)),
+                "raw_columns": int(len(tr_adapter.df.columns)),
+                "normalized_columns": int(len(tr.columns)),
                 "date_min": str(tr["_date"].min()),
                 "date_max": str(tr["_date"].max()),
                 "canonical_teams": len(tr_teams),
@@ -110,7 +113,8 @@ def build_locked_dataset(csv_path: Path, xlsm_path: Path, output_path: Path, man
                 "path": "EPL.xlsm",
                 "sha256": xlsm_sha,
                 "rows": int(len(epl)),
-                "columns": int(len(epl.columns)),
+                "raw_columns": int(len(epl_adapter.df.columns)),
+                "normalized_columns": int(len(epl.columns)),
                 "date_min": str(epl["_date"].min()),
                 "date_max": str(epl["_date"].max()),
                 "canonical_teams": len(epl_teams),
