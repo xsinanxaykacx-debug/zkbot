@@ -82,5 +82,5 @@ def test_pipeline_team_elo_carries_across_leagues_but_league_history_isolated():
 
 def test_pipeline_rejects_missing_canonical_league():
     frame = _frame([(1, "2024-01-01", "A", "B", None, 1, 0)])
-    with pytest.raises(ValueError, match="canonical league"):
+    with pytest.raises(ValueError, match="Canonical league"):
         build_features(frame)
