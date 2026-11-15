@@ -19,6 +19,25 @@ from zk2.models.calibration import OneVsRestCalibrator
 from zk2.models.metrics import evaluate_probabilities
 
 
+def _paired_logloss_delta_ci(y_true, baseline_probs, candidate_probs, class_order, *, seed=20261115, n_boot=2000):
+    """Paired bootstrap CI for candidate minus baseline per-row log loss."""
+    class_to_index = {label: index for index, label in enumerate(class_order)}
+    y_index = np.asarray([class_to_index[label] for label in np.asarray(y_true).tolist()])
+    base = np.clip(np.asarray(baseline_probs, dtype=float), 1e-15, 1.0)
+    candidate = np.clip(np.asarray(candidate_probs, dtype=float), 1e-15, 1.0)
+    rows = np.arange(len(y_index))
+    delta = np.log(candidate[rows, y_index]) * -1 - np.log(base[rows, y_index]) * -1
+    rng = np.random.default_rng(seed)
+    sampled = rng.integers(0, len(delta), size=(n_boot, len(delta)))
+    means = delta[sampled].mean(axis=1)
+    return {
+        "mean_delta_candidate_minus_baseline": float(delta.mean()),
+        "ci95_lower": float(np.quantile(means, 0.025)),
+        "ci95_upper": float(np.quantile(means, 0.975)),
+        "bootstrap_samples": n_boot,
+    }
+
+
 def _valid_arrays(frame: pd.DataFrame, probabilities: np.ndarray, target: str):
     valid = frame[target].notna().to_numpy()
     return frame.loc[valid, target].to_numpy(), probabilities[valid]
@@ -78,41 +97,53 @@ def run_calibration(features_path: Path, report_path: Path) -> dict:
             "baseline": evaluate_probabilities(y_selection, p_selection, class_order=class_order),
             "calibrators": {},
         }
-        fitted_calibrators = {}
+        candidate_probabilities = {}
         for method in ("platt", "isotonic"):
             calibrator = OneVsRestCalibrator(method).fit(p_fit, y_fit, class_order)
             calibrated_selection = calibrator.predict_proba(p_selection)
             selection_result["calibrators"][method] = evaluate_probabilities(
                 y_selection, calibrated_selection, class_order=class_order
             )
-            fitted_calibrators[method] = calibrator
+            candidate_probabilities[method] = calibrated_selection
 
-        winner = min(
+        best_method = min(
             selection_result["calibrators"],
             key=lambda method: selection_result["calibrators"][method]["log_loss"],
         )
-        # Refit the selected calibrator on all validation predictions.
+        improvement_evidence = _paired_logloss_delta_ci(
+            y_selection, p_selection, candidate_probabilities[best_method], class_order
+        )
+        # Keep the uncalibrated baseline unless the paired 95% CI supports a
+        # genuine improvement. This prevents selecting a tiny noisy gain.
+        winner = best_method if improvement_evidence["ci95_upper"] < 0 else "none"
+
         p_validation = model.predict_proba(validation)
         y_validation, p_validation = _valid_arrays(validation, p_validation, target_column)
-        final_calibrator = OneVsRestCalibrator(winner).fit(
-            p_validation, y_validation, class_order
-        )
         p_test = model.predict_proba(test)
         y_test, p_test = _valid_arrays(test, p_test, target_column)
-        calibrated_test = final_calibrator.predict_proba(p_test)
+        baseline_test_metrics = evaluate_probabilities(y_test, p_test, class_order=class_order)
 
+        if winner == "none":
+            calibrated_test = p_test
+        else:
+            final_calibrator = OneVsRestCalibrator(winner).fit(
+                p_validation, y_validation, class_order
+            )
+            calibrated_test = final_calibrator.predict_proba(p_test)
+
+        calibrated_test_metrics = evaluate_probabilities(
+            y_test, calibrated_test, class_order=class_order
+        )
         report["markets"][market] = {
             "class_order": list(class_order),
             "validation_selection": selection_result,
+            "best_candidate": best_method,
+            "best_candidate_paired_bootstrap": improvement_evidence,
             "selected_method": winner,
-            "test_baseline": evaluate_probabilities(y_test, p_test, class_order=class_order),
-            "test_calibrated": evaluate_probabilities(
-                y_test, calibrated_test, class_order=class_order
-            ),
+            "test_baseline": baseline_test_metrics,
+            "test_calibrated": calibrated_test_metrics,
             "test_log_loss_delta": round(
-                evaluate_probabilities(y_test, calibrated_test, class_order=class_order)["log_loss"]
-                - evaluate_probabilities(y_test, p_test, class_order=class_order)["log_loss"],
-                8,
+                calibrated_test_metrics["log_loss"] - baseline_test_metrics["log_loss"], 8
             ),
         }
 
