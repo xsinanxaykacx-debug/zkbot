@@ -13,6 +13,7 @@ from pathlib import Path
 import pandas as pd
 
 from zk2.data.targets import add_targets
+from zk2.data.league_mapping import normalize_league
 from zk2.data.team_mapping import normalize_team
 
 
@@ -96,7 +97,7 @@ class DataCsvAdapter:
         out["_league"] = league_season.str.replace(
             r"\s*\d{4}/\d{4}\s*$", "", regex=True
         ).str.strip()
-        out["_league_canonical"] = out["_league"]
+        out["_league_canonical"] = out["_league"].map(normalize_league)
 
         out["_match_id"] = out["Maç_ID"].astype("string").str.strip()
         out["_team_home_canonical"] = out["Ev_Sahibi"].map(
