@@ -1,0 +1,44 @@
+name: Audit xg7lig matching against ZK train-validation data
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches: [main]
+    paths:
+      - "xg7lig.csv"
+      - "scripts/audit_xg7lig_matching.py"
+      - "scripts/build_locked_dataset.py"
+      - "src/zk2/data/**"
+      - ".github/workflows/audit-xg7lig-matching.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  match-audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout audit branch
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install ZK project dependencies
+        run: python -m pip install --upgrade pip && pip install -e .
+      - name: Download DATA.csv source
+        run: curl --fail --location --retry 3 --output DATA.csv https://raw.githubusercontent.com/xsinanxaykacx-debug/trsuper/main/data/csv/DATA.csv
+      - name: Build normalized ZK dataset for source matching
+        run: python scripts/build_locked_dataset.py DATA.csv EPL.xlsm --output zk2_locked_dataset.csv.gz --manifest zk2_dataset_manifest.json
+      - name: Match xg7lig to train and validation rows only
+        run: python scripts/audit_xg7lig_matching.py --xg xg7lig.csv --zk zk2_locked_dataset.csv.gz --json audit-results/xg7lig_match_audit.json --csv audit-results/xg7lig_match_rows.csv
+      - name: Upload match audit report
+        uses: actions/upload-artifact@v4
+        with:
+          name: xg7lig-match-audit
+          path: |
+            audit-results/xg7lig_match_audit.json
+            audit-results/xg7lig_match_rows.csv
+          if-no-files-found: error
+          retention-days: 30
