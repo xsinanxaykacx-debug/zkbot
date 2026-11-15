@@ -56,7 +56,7 @@ def build_locked_dataset(csv_path: Path, xlsm_path: Path, output_path: Path, man
     tr_audit = DataCsvAdapter.audit(tr)
     epl_audit = EplXlsmAdapter.audit(epl)
     for name, report in (("DATA.csv", tr_audit), ("EPL.xlsm", epl_audit)):
-        if report["invalid_date_rows"] or report["missing_score_rows"] or report["missing_home_team_rows"] or report["missing_away_team_rows"]:
+        if report["invalid_date_rows"] or report.get("missing_season_rows", 0) or report["missing_score_rows"] or report["missing_home_team_rows"] or report["missing_away_team_rows"]:
             raise ValueError(f"{name} failed core row-quality validation: {report}")
         if report["duplicate_date_home_away_rows"]:
             raise ValueError(f"{name} contains duplicate date/home/away match keys")
@@ -135,7 +135,7 @@ def build_locked_dataset(csv_path: Path, xlsm_path: Path, output_path: Path, man
             "date_max": str(combined["_date"].max()),
             "source_row_counts": {str(k): int(v) for k, v in combined["_source_dataset"].value_counts().items()},
             "canonical_leagues": sorted(str(x) for x in combined["_league_canonical"].unique()),
-            "canonical_teams": int(combined["_team_home_canonical"].nunique() + combined["_team_away_canonical"].nunique()),
+            "canonical_teams": len(set(combined["_team_home_canonical"]) | set(combined["_team_away_canonical"])),
             "feature_market_columns": odds_columns,
             "outcome_columns": ["home_score", "away_score", "_y_1x2", "_y_ou25", "_y_kg"],
             "file": output_path.name,
