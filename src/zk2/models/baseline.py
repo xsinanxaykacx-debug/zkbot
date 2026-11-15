@@ -4,9 +4,9 @@ from __future__ import annotations
 
 import numpy as np
 import pandas as pd
-from sklearn.impute import SimpleImputer
+from sklearn.impute import MissingIndicator, SimpleImputer
 from sklearn.linear_model import LogisticRegression
-from sklearn.pipeline import Pipeline
+from sklearn.pipeline import FeatureUnion, Pipeline
 from sklearn.preprocessing import StandardScaler
 
 
@@ -29,6 +29,30 @@ TARGET_COLUMNS = {"1x2": "_y_1x2", "ou25": "_y_ou25", "kg": "_y_kg"}
 CLASS_ORDER = {"1x2": ("H", "D", "A"), "ou25": (0, 1), "kg": (0, 1)}
 
 
+def build_pipeline() -> Pipeline:
+    """Build preprocessing with train-fitted medians and always-on missing flags."""
+    features = FeatureUnion(
+        transformer_list=[
+            (
+                "imputed_scaled",
+                Pipeline(
+                    steps=[
+                        ("imputer", SimpleImputer(strategy="median", keep_empty_features=True)),
+                        ("scaler", StandardScaler()),
+                    ]
+                ),
+            ),
+            ("missing_flags", MissingIndicator(features="all", error_on_new=False)),
+        ]
+    )
+    return Pipeline(
+        steps=[
+            ("features", features),
+            ("classifier", LogisticRegression(max_iter=2000, solver="lbfgs")),
+        ]
+    )
+
+
 class BaselineModel:
     """Single-market logistic baseline with train-only preprocessing."""
 
@@ -40,15 +64,7 @@ class BaselineModel:
         self.target = target
         self.features = tuple(features)
         self.classes_ = np.asarray(CLASS_ORDER[target])
-        self.pipeline = Pipeline(
-            steps=[
-                ("imputer", SimpleImputer(
-                    strategy="median", add_indicator=True, keep_empty_features=True
-                )),
-                ("scaler", StandardScaler()),
-                ("classifier", LogisticRegression(max_iter=2000, solver="lbfgs")),
-            ]
-        )
+        self.pipeline = build_pipeline()
         self._is_fitted = False
 
     def _prepare_X(self, X: pd.DataFrame) -> pd.DataFrame:
@@ -68,6 +84,12 @@ class BaselineModel:
         target = target.loc[valid]
         if prepared_X.empty:
             raise ValueError("No rows with valid targets are available for training.")
+        all_missing = prepared_X.columns[prepared_X.isna().all()].tolist()
+        if all_missing:
+            raise ValueError(
+                "Cannot fit baseline with entirely missing training features: "
+                + ", ".join(all_missing)
+            )
         expected = set(self.classes_.tolist())
         observed = set(target.tolist())
         if observed != expected:
