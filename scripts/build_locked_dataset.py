@@ -14,7 +14,7 @@ from zk2.data.adapters.epl_xlsm import EplXlsmAdapter
 
 BASE_COLUMNS = [
     "_source_dataset", "_source_row", "_date", "_season", "_league_canonical",
-    "_team_home_canonical", "_team_away_canonical", "home_score", "away_score",
+    "_team_home_canonical", "_team_away_canonical", "home_score", "away_score", "MSE", "MSD",
     "_y_1x2", "_y_ou25", "_y_kg", "_kickoff_time",
 ]
 
@@ -34,6 +34,8 @@ def target_counts(frame: pd.DataFrame, column: str) -> dict[str, int]:
 def prepare_source(frame: pd.DataFrame, source_name: str, source_row_column: str) -> pd.DataFrame:
     out = frame.copy()
     out["_source_dataset"] = source_name
+    out["MSE"] = out["home_score"]
+    out["MSD"] = out["away_score"]
     if source_row_column not in out.columns:
         raise ValueError(f"Missing source row column for {source_name}: {source_row_column}")
     out["_source_row"] = out[source_row_column]
@@ -143,7 +145,7 @@ def build_locked_dataset(csv_path: Path, xlsm_path: Path, output_path: Path, man
             "canonical_leagues": sorted(str(x) for x in combined["_league_canonical"].unique()),
             "canonical_teams": len(set(combined["_team_home_canonical"]) | set(combined["_team_away_canonical"])),
             "feature_market_columns": odds_columns,
-            "outcome_columns": ["home_score", "away_score", "_y_1x2", "_y_ou25", "_y_kg"],
+            "outcome_columns": ["home_score", "away_score", "MSE", "MSD", "_y_1x2", "_y_ou25", "_y_kg"],
             "file": output_path.name,
             "sha256": sha256_file(output_path),
             "size_bytes": output_path.stat().st_size,
@@ -151,6 +153,7 @@ def build_locked_dataset(csv_path: Path, xlsm_path: Path, output_path: Path, man
         "policy": {
             "raw_source_files_not_committed_to_zkbot": True,
             "post_match_statistics_excluded_from_combined_table": True,
+            "MSE_MSD_are_score_aliases_for_leakage_safe_history_updates_not_model_features": True,
             "closing_odds_kept_separate_from_opening_odds": True,
             "missing_odds_remain_null": True,
             "target_labels_derived_from_final_scores": True,
