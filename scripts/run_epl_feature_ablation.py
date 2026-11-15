@@ -49,7 +49,7 @@ def _date_cluster_ci(dates: pd.Series, deltas: np.ndarray, *, seed: int, reps: i
     return [float(value) for value in np.quantile(estimates, [0.025, 0.975])]
 
 
-def run_ablation(features_path: Path, report_path: Path, output_path: Path, *, seed: int = 20261115) -> dict:
+def run_ablation(features_path: Path, csv_path: Path, json_path: Path, *, seed: int = 20261115) -> dict:
     frame = pd.read_csv(features_path, compression="infer", low_memory=False)
     required = {"_date", "_source_dataset", "_y_1x2", *FEATURES}
     missing = sorted(required.difference(frame.columns))
@@ -127,10 +127,10 @@ def run_ablation(features_path: Path, report_path: Path, output_path: Path, *, s
         },
         "caution": "This is a validation-confirmation ablation, not a new final-test evaluation. Feature-group ablations are correlated and do not establish causal effects.",
     }
-    output_path.parent.mkdir(parents=True, exist_ok=True)
-    output_path.write_text(json.dumps(result, ensure_ascii=False, indent=2), encoding="utf-8")
-    report_path.parent.mkdir(parents=True, exist_ok=True)
-    pd.DataFrame(rows).to_csv(report_path, index=False, encoding="utf-8")
+    json_path.parent.mkdir(parents=True, exist_ok=True)
+    json_path.write_text(json.dumps(result, ensure_ascii=False, indent=2), encoding="utf-8")
+    csv_path.parent.mkdir(parents=True, exist_ok=True)
+    pd.DataFrame(rows).to_csv(csv_path, index=False, encoding="utf-8")
     return result
 
 
@@ -140,7 +140,7 @@ def main() -> None:
     parser.add_argument("--csv", type=Path, default=Path("audit-results/epl_feature_ablation.csv"))
     parser.add_argument("--json", type=Path, default=Path("audit-results/epl_feature_ablation.json"))
     args = parser.parse_args()
-    result = run_ablation(args.features, args.json, args.csv)
+    result = run_ablation(args.features, args.csv, args.json)
     print(json.dumps(result, ensure_ascii=False, indent=2))
 
 
