@@ -44,7 +44,7 @@ def calculate_form(
 
     work = frame.copy()
     work["_form_order"] = range(len(work))
-    work["_form_date"] = pd.to_datetime(work["_date"], errors="coerce")
+    work["_form_date"] = pd.to_datetime(work["_date"], errors="coerce").dt.normalize()
     if work["_form_date"].isna().any():
         raise ValueError("Form input contains missing or invalid dates.")
     if work[["_team_home_canonical", "_team_away_canonical"]].isna().any().any():
