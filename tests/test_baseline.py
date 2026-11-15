@@ -82,3 +82,33 @@ def test_chronological_split_keeps_whole_dates_in_order():
     train, validation, test = chronological_split(frame)
     assert train["_date"].max() < validation["_date"].min()
     assert validation["_date"].max() < test["_date"].min()
+
+
+def test_missing_indicator_covers_features_missing_only_in_validation():
+    from zk2.models.baseline import build_pipeline
+
+    train = pd.DataFrame({
+        "x1": [1.0, 2.0, 3.0, np.nan],
+        "x2": [1.0, 2.0, 3.0, 4.0],
+    })
+    validation = pd.DataFrame({
+        "x1": [np.nan, 5.0],
+        "x2": [np.nan, 5.0],
+    })
+    pipeline = build_pipeline()
+    pipeline.fit(train, ["H", "D", "A", "H"])
+    transformed = pipeline.named_steps["features"].transform(validation)
+
+    assert transformed.shape == (2, 4)
+    assert transformed[0, 2] == 1  # x1 missing
+    assert transformed[0, 3] == 1  # x2 first becomes missing in validation
+
+
+def test_fit_rejects_feature_entirely_missing_in_training():
+    X = pd.DataFrame({
+        "elo_diff_pre": [np.nan] * 9,
+        "form_home_pts_avg_5": np.arange(9, dtype=float),
+    })
+    y = np.asarray(["H", "D", "A"] * 3)
+    with pytest.raises(ValueError, match="entirely missing training features"):
+        BaselineModel("1x2", features=tuple(X.columns)).fit(X, y)
