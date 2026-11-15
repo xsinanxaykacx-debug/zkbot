@@ -111,3 +111,15 @@ def test_missing_team_names_remain_missing_not_literal_nan(tmp_path):
     assert pd.isna(result.loc[0, "_team_away_canonical"])
     assert report["missing_home_team_rows"] == 1
     assert report["missing_away_team_rows"] == 1
+
+
+def test_adapter_exposes_date_and_season_validity_flags(tmp_path):
+    result = DataCsvAdapter(_write_csv(tmp_path, [BASE_ROW])).load().transform()
+    assert bool(result.loc[0, "_is_valid_date"]) is True
+    assert bool(result.loc[0, "_is_valid_season"]) is True
+
+
+def test_adapter_canonicalizes_league_sponsor_aliases(tmp_path):
+    row = {**BASE_ROW, "Lig/Sezon": "Türkiye Spor Toto Süper Lig 2013/2014"}
+    result = DataCsvAdapter(_write_csv(tmp_path, [row])).load().transform()
+    assert result.loc[0, "_league_canonical"] == "Türkiye Süper Lig"
