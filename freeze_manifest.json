@@ -2,7 +2,6 @@
   "model_version": "zk2-v1.0",
   "freeze_date": "2026-11-15",
   "model_code_commit": "a0a32f04bebdac8e3097a0137c037562d5d3d4d6",
-  "freeze_manifest_commit": "ae0a9d34e08f4c4b6973593231ea0f14c56dae17",
   "artifact": {
     "id": 14174298047,
     "name": "zk2-locked-dataset-v1",
@@ -77,6 +76,7 @@
     "pull_request_status_at_freeze": "open",
     "pull_request_merged": false,
     "intended_tag": "zk2-v1.0",
-    "tag_target_policy": "Tag the commit that adds this freeze manifest, not model_code_commit."
+    "tag_target_policy": "Tag the commit that adds this freeze manifest, not model_code_commit.",
+    "tag_target_commit": "91a576942eeda037430188a555cffccc7671660f"
   }
 }
