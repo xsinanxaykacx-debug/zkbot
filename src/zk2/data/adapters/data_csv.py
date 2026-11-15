@@ -87,10 +87,12 @@ class DataCsvAdapter:
         raw_date = out["Tarih"].astype("string").str.strip()
         out["_date"] = pd.to_datetime(raw_date, format="%d-%m-%Y", errors="coerce")
         out["_date_only"] = out["_date"].dt.normalize()
+        out["_is_valid_date"] = out["_date"].notna()
 
         league_season = out["Lig/Sezon"].astype("string").str.strip()
         season = league_season.str.extract(r"(\d{4}/\d{4})", expand=False)
         out["_season"] = season
+        out["_is_valid_season"] = out["_season"].notna()
         out["_league"] = league_season.str.replace(
             r"\s*\d{4}/\d{4}\s*$", "", regex=True
         ).str.strip()
