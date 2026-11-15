@@ -2,6 +2,12 @@ name: Build locked ZK 2.0 dataset
 
 on:
   workflow_dispatch:
+  pull_request:
+    branches: [main]
+    paths:
+      - "scripts/audit_xg_source_schema.py"
+      - "tests/test_xg_source_schema.py"
+      - ".github/workflows/build-locked-dataset.yml"
   push:
     branches: [main]
     paths:
