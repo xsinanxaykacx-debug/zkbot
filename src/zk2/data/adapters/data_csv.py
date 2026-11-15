@@ -97,8 +97,12 @@ class DataCsvAdapter:
         out["_league_canonical"] = out["_league"]
 
         out["_match_id"] = out["Maç_ID"].astype("string").str.strip()
-        out["_team_home_canonical"] = out["Ev_Sahibi"].map(normalize_team)
-        out["_team_away_canonical"] = out["Deplasman"].map(normalize_team)
+        out["_team_home_canonical"] = out["Ev_Sahibi"].map(
+            lambda value: pd.NA if pd.isna(value) or not str(value).strip() else normalize_team(value)
+        )
+        out["_team_away_canonical"] = out["Deplasman"].map(
+            lambda value: pd.NA if pd.isna(value) or not str(value).strip() else normalize_team(value)
+        )
 
         out["MSE"] = _numeric_series(out["MSE"])
         out["MSD"] = _numeric_series(out["MSD"])
@@ -141,8 +145,8 @@ class DataCsvAdapter:
             "rows": int(len(frame)),
             "invalid_date_rows": int(frame["_date"].isna().sum()),
             "missing_season_rows": int(frame["_season"].isna().sum()),
-            "missing_home_team_rows": int(frame["_team_home_canonical"].isna().sum()),
-            "missing_away_team_rows": int(frame["_team_away_canonical"].isna().sum()),
+            "missing_home_team_rows": int((frame["_team_home_canonical"].isna() | frame["_team_home_canonical"].astype("string").str.strip().eq("")).sum()),
+            "missing_away_team_rows": int((frame["_team_away_canonical"].isna() | frame["_team_away_canonical"].astype("string").str.strip().eq("")).sum()),
             "missing_score_rows": int((frame["MSE"].isna() | frame["MSD"].isna()).sum()),
             "missing_1x2_odds_rows": int(frame[["_odd_H", "_odd_D", "_odd_A"]].isna().any(axis=1).sum()),
             "missing_ou25_odds_rows": int(frame[["_odd_under25", "_odd_over25"]].isna().any(axis=1).sum()),
