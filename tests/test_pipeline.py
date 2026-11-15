@@ -14,7 +14,7 @@ def _frame(rows):
 def _feature_columns(frame):
     return [
         column for column in frame.columns
-        if column.startswith(("elo_", "form_", "h2h_", "league_"))
+        if column.startswith(("elo_", "form_", "h2h_", "league_", "xg_form_"))
     ]
 
 
@@ -85,4 +85,25 @@ def test_pipeline_team_elo_carries_across_leagues_but_league_history_isolated():
 def test_pipeline_rejects_missing_canonical_league():
     frame = _frame([(1, "2024-01-01", "A", "B", None, 1, 0)])
     with pytest.raises(ValueError, match="Canonical league"):
+        build_features(frame)
+
+
+@pytest.mark.leakage
+def test_pipeline_adds_xg_features_only_when_both_xg_columns_exist():
+    frame = _frame([
+        (1, "2024-01-01", "A", "B", "L1", 2, 0),
+        (2, "2024-01-08", "A", "C", "L1", 1, 1),
+    ])
+    frame["xg_home"] = [2.1, 1.4]
+    frame["xg_away"] = [0.4, 0.9]
+    result = build_features(frame)
+    assert pd.isna(result.loc[0, "xg_form_home_for_avg_5"])
+    assert result.loc[1, "xg_form_home_for_avg_5"] == 2.1
+    assert result.loc[1, "xg_form_home_against_avg_5"] == 0.4
+
+
+def test_pipeline_rejects_partial_xg_input():
+    frame = _frame([(1, "2024-01-01", "A", "B", "L1", 1, 0)])
+    frame["xg_home"] = [1.2]
+    with pytest.raises(ValueError, match="both xg_home and xg_away"):
         build_features(frame)

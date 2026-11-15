@@ -2,14 +2,38 @@ name: Build locked ZK 2.0 dataset
 
 on:
   workflow_dispatch:
+  pull_request:
+    branches: [main]
+    paths:
+      - "scripts/audit_xg_source_schema.py"
+      - "scripts/audit_openplay_xg_coverage.py"
+      - "tests/test_xg_source_schema.py"
+      - "tests/test_openplay_xg_coverage.py"
+      - "src/zk2/features/xg_form.py"
+      - "src/zk2/features/pipeline.py"
+      - "src/zk2/models/baseline.py"
+      - "scripts/run_xg_ablation.py"
+      - "scripts/train_market_models.py"
+      - "scripts/smoke_test_market_models.py"
+      - "tests/test_market_model_router.py"
+      - "tests/test_xg_form.py"
+      - "tests/test_xg_ablation.py"
+      - ".github/workflows/build-locked-dataset.yml"
   push:
     branches: [main]
     paths:
       - "scripts/build_locked_dataset.py"
+      - "scripts/audit_xg_source_schema.py"
+      - "scripts/audit_openplay_xg_coverage.py"
       - "src/zk2/data/adapters/data_csv.py"
       - "src/zk2/data/adapters/epl_xlsm.py"
       - "src/zk2/data/team_mapping.py"
       - "src/zk2/data/epl_team_mapping.py"
+      - "src/zk2/features/xg_form.py"
+      - "src/zk2/features/pipeline.py"
+      - "src/zk2/models/baseline.py"
+      - "scripts/run_xg_ablation.py"
+      - "tests/test_market_model_router.py"
       - "src/zk2/data/league_mapping.py"
       - "EPL.xlsm"
       - ".github/workflows/build-locked-dataset.yml"
@@ -29,15 +53,41 @@ jobs:
           python-version: "3.11"
       - name: Install project
         run: python -m pip install --upgrade pip && pip install -e .
+      - name: Install Parquet reader for xG audit
+        run: python -m pip install pyarrow
       - name: Download DATA.csv source
         run: curl --fail --location --retry 3 --output DATA.csv https://raw.githubusercontent.com/xsinanxaykacx-debug/trsuper/main/data/csv/DATA.csv
       - name: Build and validate locked dataset
         run: python scripts/build_locked_dataset.py DATA.csv EPL.xlsm --output zk2_locked_dataset.csv.gz --manifest zk2_dataset_manifest.json
-      - name: Upload locked dataset and manifest
+      - name: Audit existing sources for xG columns and row coverage
+        run: python scripts/audit_xg_source_schema.py DATA.csv EPL.xlsm --json audit-results/xg_source_schema.json --csv audit-results/xg_source_schema.csv
+      - name: Download Openplay CC-BY xG release assets
+        run: |
+          mkdir -p provider-data
+          curl --fail --location --retry 3 --output provider-data/matches.parquet https://github.com/nlbair/openplay/releases/download/data-v0.1.0/matches.parquet
+          curl --fail --location --retry 3 --output provider-data/team_match_stats.parquet https://github.com/nlbair/openplay/releases/download/data-v0.1.0/team_match_stats.parquet
+          curl --fail --location --retry 3 --output provider-data/competitions.parquet https://github.com/nlbair/openplay/releases/download/data-v0.1.0/competitions.parquet
+      - name: Audit Openplay match-level xG against EPL.xlsm
+        run: python scripts/audit_openplay_xg_coverage.py EPL.xlsm provider-data/matches.parquet provider-data/team_match_stats.parquet provider-data/competitions.parquet --json audit-results/openplay_xg_coverage.json --csv audit-results/openplay_epl_match_xg.csv
+      - name: Compare fixed LR with and without rolling xG on confirmation only
+        run: python scripts/run_xg_ablation.py zk2_locked_dataset.csv.gz audit-results/openplay_epl_match_xg.csv --csv audit-results/xg_lr_paired_rows.csv --report audit-results/xg_lr_ablation.json --enriched-dataset zk2_xg_enriched_dataset.csv.gz
+      - name: Train source-aware market models on chronological training rows only
+        run: python scripts/train_market_models.py zk2_xg_enriched_dataset.csv.gz --locked-dataset zk2_locked_dataset.csv.gz --manifest zk2_dataset_manifest.json --output artifacts/zk2_market_models_xg.joblib
+      - name: Reload model artifact and smoke-test predictions in a fresh process
+        run: python scripts/smoke_test_market_models.py artifacts/zk2_market_models_xg.joblib
+      - name: Upload locked dataset, model bundle, manifest, and xG audits
         uses: actions/upload-artifact@v4
         with:
           name: zk2-locked-dataset-v1
           path: |
             zk2_locked_dataset.csv.gz
+            zk2_xg_enriched_dataset.csv.gz
+            artifacts/zk2_market_models_xg.joblib
             zk2_dataset_manifest.json
+            audit-results/xg_source_schema.json
+            audit-results/xg_source_schema.csv
+            audit-results/openplay_xg_coverage.json
+            audit-results/openplay_epl_match_xg.csv
+            audit-results/xg_lr_paired_rows.csv
+            audit-results/xg_lr_ablation.json
           if-no-files-found: error

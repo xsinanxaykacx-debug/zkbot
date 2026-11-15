@@ -7,7 +7,7 @@ name = "zk2"
 version = "0.1.0"
 description = "Chronological, leakage-controlled football prediction research"
 requires-python = ">=3.10"
-dependencies = ["pandas>=2.0", "numpy>=1.24", "scikit-learn>=1.4", "openpyxl>=3.1", "lightgbm>=4.0"]
+dependencies = ["pandas>=2.0", "numpy>=1.24", "scikit-learn==1.9.1", "openpyxl>=3.1", "lightgbm>=4.0"]
 
 [project.optional-dependencies]
 dev = ["pytest>=8.0", "pytest-cov>=5.0", "ruff>=0.5"]

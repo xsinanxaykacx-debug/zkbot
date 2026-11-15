@@ -109,3 +109,98 @@ class BaselineModel:
         fitted_classes = self.pipeline.named_steps["classifier"].classes_.tolist()
         order = [fitted_classes.index(label) for label in self.classes_.tolist()]
         return raw[:, order]
+
+
+
+XG_FEATURES = tuple(
+    f"xg_form_{side}_{metric}_{suffix}"
+    for side in ("home", "away")
+    for window in (5, 10)
+    for metric, suffix in (
+        ("for", f"avg_{window}"),
+        ("against", f"avg_{window}"),
+        ("diff", f"avg_{window}"),
+        ("matches", str(window)),
+    )
+)
+EPL_SOURCE_DATASET = "epl.xlsm"
+
+
+class MarketModelRouter:
+    """Route each market to the validated league/source-specific feature set.
+
+    1X2 remains a single xG-free model. OU2.5 and BTTS use a separate EPL
+    model with rolling xG and a non-EPL model without xG. The non-EPL model
+    is deliberately not fed imputed xG values.
+    """
+
+    def __init__(self, target: str):
+        if target not in TARGET_COLUMNS:
+            raise ValueError(
+                f"Unsupported target {target!r}; expected one of {tuple(TARGET_COLUMNS)}."
+            )
+        self.target = target
+        self.classes_ = np.asarray(CLASS_ORDER[target])
+        self.global_model: BaselineModel | None = None
+        self.epl_model: BaselineModel | None = None
+        self.non_epl_model: BaselineModel | None = None
+        self._is_fitted = False
+
+    @staticmethod
+    def _source_mask(frame: pd.DataFrame) -> pd.Series:
+        if "_source_dataset" not in frame.columns:
+            raise ValueError("MarketModelRouter requires the _source_dataset column.")
+        return frame["_source_dataset"].astype("string").str.casefold().eq(EPL_SOURCE_DATASET)
+
+    def fit(self, X: pd.DataFrame, y: pd.Series | np.ndarray | None = None) -> "MarketModelRouter":
+        target_values = X[TARGET_COLUMNS[self.target]] if y is None else pd.Series(y, index=X.index)
+        if len(X) != len(target_values):
+            raise ValueError("X and y must contain the same number of rows.")
+        valid = target_values.notna()
+        train = X.loc[valid].copy()
+        target_values = target_values.loc[valid]
+        if train.empty:
+            raise ValueError("No rows with valid targets are available for training.")
+
+        if self.target == "1x2":
+            self.global_model = BaselineModel(self.target).fit(train, target_values)
+        else:
+            missing_xg = sorted(set(XG_FEATURES).difference(train.columns))
+            if missing_xg:
+                raise ValueError(
+                    "OU/KG market routing requires rolling xG features: "
+                    + ", ".join(missing_xg)
+                )
+            epl_mask = self._source_mask(train)
+            epl_train = train.loc[epl_mask]
+            non_epl_train = train.loc[~epl_mask]
+            if epl_train.empty or non_epl_train.empty:
+                raise ValueError(
+                    "OU/KG routing requires both EPL and non-EPL training rows."
+                )
+            self.epl_model = BaselineModel(
+                self.target, features=FEATURES + XG_FEATURES
+            ).fit(epl_train, target_values.loc[epl_mask])
+            self.non_epl_model = BaselineModel(
+                self.target, features=FEATURES
+            ).fit(non_epl_train, target_values.loc[~epl_mask])
+
+        self._is_fitted = True
+        return self
+
+    def predict_proba(self, X: pd.DataFrame) -> np.ndarray:
+        if not self._is_fitted:
+            raise RuntimeError("MarketModelRouter must be fitted before predict_proba.")
+        if self.target == "1x2":
+            assert self.global_model is not None
+            return self.global_model.predict_proba(X)
+
+        epl_mask = self._source_mask(X)
+        probabilities = np.empty((len(X), len(self.classes_)), dtype=float)
+        if epl_mask.any():
+            assert self.epl_model is not None
+            probabilities[epl_mask.to_numpy()] = self.epl_model.predict_proba(X.loc[epl_mask])
+        if (~epl_mask).any():
+            assert self.non_epl_model is not None
+            probabilities[(~epl_mask).to_numpy()] = self.non_epl_model.predict_proba(X.loc[~epl_mask])
+        return probabilities
