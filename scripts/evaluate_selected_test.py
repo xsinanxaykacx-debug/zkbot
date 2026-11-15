@@ -60,13 +60,13 @@ def run_selected_test(features_path: Path, search_report_path: Path, report_path
         winner = selected["validation_winner"]
         market_result = {
             "validation_winner": winner,
-            "validation_best_candidate": selected["best_candidate"],
+            "validation_winner": winner,\n            "validation_best_candidate": selected["best_candidate"],\n            "validation_confirmation_bootstrap": selected["confirmation"]["paired_block_bootstrap"],
             "logistic_regression_test_reference": lr_metrics,
         }
 
         if winner == "lightgbm":
             candidate_id = int(selected["best_candidate"])
-            candidates = selected["candidates_ranked_by_validation_log_loss"]
+            candidates = selected["candidates_ranked_by_selection_log_loss"]
             candidate = next(item for item in candidates if int(item["candidate"]) == candidate_id)
             model = LightGBMBaseline(market, params=candidate["overrides"]).fit(
                 fit_data, fit_data[target_column]
