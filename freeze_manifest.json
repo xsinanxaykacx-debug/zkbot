@@ -3,12 +3,12 @@
   "freeze_date": "2026-11-15",
   "model_code_commit": "a0a32f04bebdac8e3097a0137c037562d5d3d4d6",
   "artifact": {
-    "id": 14174917073,
+    "id": 14175146586,
     "name": "zk2-locked-dataset-v1",
-    "workflow_run_id": 43747622925,
-    "workflow_run_commit": "8ada4bc6e3462c1d958b30d33679b74603f10734",
-    "archive_sha256": "d4acba4a2dbf25276fe00a6422d52a785ec16a8b4cc0f9e2db3610821f5609ad",
-    "model_joblib_sha256": "54a78cd72c291552a9eadff6c7defeaa7e091eb96cf82098b26f3f0b3fcbc1f3",
+    "workflow_run_id": 43747885770,
+    "workflow_run_commit": "40de31518f63077d35ca16a32b97e565d5b4e2a9",
+    "archive_sha256": "49b7ad566c896cecf5bef09a5996f795dd9e54e6bba60b2b623e0b74df1a051f",
+    "model_joblib_sha256": "f33be4ea3649d8228df311da0071fa5abdcdd0d85d2b21097f227817624e0452",
     "model_joblib_path": "artifacts/zk2_market_models_xg.joblib",
     "model_joblib_size_bytes": 31434
   },
@@ -44,10 +44,10 @@
     }
   },
   "verification": {
-    "build_workflow_run_id": 43747622925,
-    "build_workflow_run_number": 37,
-    "pytest_run_id": 43747623042,
-    "pytest_run_number": 181,
+    "build_workflow_run_id": 43747885770,
+    "build_workflow_run_number": 38,
+    "pytest_run_id": 43747885749,
+    "pytest_run_number": 182,
     "smoke_test": "passed",
     "pytest": "passed",
     "model_markets": [
