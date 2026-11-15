@@ -1,5 +1,10 @@
+import sys
+from pathlib import Path
+
 import numpy as np
 import pandas as pd
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from scripts.run_epl_feature_ablation import GROUPS, _date_cluster_ci, feature_sets
 from zk2.models.baseline import FEATURES
