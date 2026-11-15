@@ -1,0 +1,35 @@
+name: DATA.csv full source audit
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "scripts/audit_data_csv.py"
+      - "src/zk2/data/adapters/data_csv.py"
+      - ".github/workflows/audit-data-csv.yml"
+
+permissions:
+  contents: read
+ njobs:
+  audit-data:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout ZK 2.0
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install project
+        run: python -m pip install --upgrade pip && pip install -e .
+      - name: Download DATA.csv from source repository
+        run: curl --fail --location --retry 3 --output DATA.csv https://raw.githubusercontent.com/xsinanxaykacx-debug/trsuper/main/data/csv/DATA.csv
+      - name: Run complete row-level audit
+        run: python scripts/audit_data_csv.py DATA.csv --output data_audit_report.json
+      - name: Upload audit report
+        uses: actions/upload-artifact@v4
+        with:
+          name: zk2-data-csv-audit
+          path: data_audit_report.json
+          if-no-files-found: error
