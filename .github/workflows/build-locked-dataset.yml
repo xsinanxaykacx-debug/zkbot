@@ -9,6 +9,11 @@ on:
       - "scripts/audit_openplay_xg_coverage.py"
       - "tests/test_xg_source_schema.py"
       - "tests/test_openplay_xg_coverage.py"
+      - "src/zk2/features/xg_form.py"
+      - "src/zk2/features/pipeline.py"
+      - "scripts/run_xg_ablation.py"
+      - "tests/test_xg_form.py"
+      - "tests/test_xg_ablation.py"
       - ".github/workflows/build-locked-dataset.yml"
   push:
     branches: [main]
@@ -20,6 +25,9 @@ on:
       - "src/zk2/data/adapters/epl_xlsm.py"
       - "src/zk2/data/team_mapping.py"
       - "src/zk2/data/epl_team_mapping.py"
+      - "src/zk2/features/xg_form.py"
+      - "src/zk2/features/pipeline.py"
+      - "scripts/run_xg_ablation.py"
       - "src/zk2/data/league_mapping.py"
       - "EPL.xlsm"
       - ".github/workflows/build-locked-dataset.yml"
@@ -55,6 +63,8 @@ jobs:
           curl --fail --location --retry 3 --output provider-data/competitions.parquet https://github.com/nlbair/openplay/releases/download/data-v0.1.0/competitions.parquet
       - name: Audit Openplay match-level xG against EPL.xlsm
         run: python scripts/audit_openplay_xg_coverage.py EPL.xlsm provider-data/matches.parquet provider-data/team_match_stats.parquet provider-data/competitions.parquet --json audit-results/openplay_xg_coverage.json --csv audit-results/openplay_epl_match_xg.csv
+      - name: Compare fixed LR with and without rolling xG on confirmation only
+        run: python scripts/run_xg_ablation.py zk2_locked_dataset.csv.gz audit-results/openplay_epl_match_xg.csv --csv audit-results/xg_lr_paired_rows.csv --report audit-results/xg_lr_ablation.json
       - name: Upload locked dataset, manifest, and xG audits
         uses: actions/upload-artifact@v4
         with:
@@ -66,4 +76,6 @@ jobs:
             audit-results/xg_source_schema.csv
             audit-results/openplay_xg_coverage.json
             audit-results/openplay_epl_match_xg.csv
+            audit-results/xg_lr_paired_rows.csv
+            audit-results/xg_lr_ablation.json
           if-no-files-found: error
