@@ -1,0 +1,43 @@
+name: Build locked ZK 2.0 dataset
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "scripts/build_locked_dataset.py"
+      - "src/zk2/data/adapters/data_csv.py"
+      - "src/zk2/data/adapters/epl_xlsm.py"
+      - "src/zk2/data/team_mapping.py"
+      - "src/zk2/data/epl_team_mapping.py"
+      - "src/zk2/data/league_mapping.py"
+      - "EPL.xlsm"
+      - ".github/workflows/build-locked-dataset.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  build-locked-dataset:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout ZK 2.0 and EPL workbook
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install project
+        run: python -m pip install --upgrade pip && pip install -e .
+      - name: Download DATA.csv source
+        run: curl --fail --location --retry 3 --output DATA.csv https://raw.githubusercontent.com/xsinanxaykacx-debug/trsuper/main/data/csv/DATA.csv
+      - name: Build and validate locked dataset
+        run: python scripts/build_locked_dataset.py DATA.csv EPL.xlsm --output zk2_locked_dataset.csv.gz --manifest zk2_dataset_manifest.json
+      - name: Upload locked dataset and manifest
+        uses: actions/upload-artifact@v4
+        with:
+          name: zk2-locked-dataset-v1
+          path: |
+            zk2_locked_dataset.csv.gz
+            zk2_dataset_manifest.json
+          if-no-files-found: error
