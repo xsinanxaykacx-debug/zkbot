@@ -108,6 +108,6 @@ def test_missing_team_names_remain_missing_not_literal_nan(tmp_path):
     report = DataCsvAdapter.audit(result)
 
     assert pd.isna(result.loc[0, "_team_home_canonical"])
-    assert result.loc[0, "_team_away_canonical"] == ""
+    assert pd.isna(result.loc[0, "_team_away_canonical"])
     assert report["missing_home_team_rows"] == 1
     assert report["missing_away_team_rows"] == 1
