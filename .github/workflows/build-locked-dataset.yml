@@ -6,6 +6,7 @@ on:
     branches: [main]
     paths:
       - "scripts/build_locked_dataset.py"
+      - "scripts/audit_xg_source_schema.py"
       - "src/zk2/data/adapters/data_csv.py"
       - "src/zk2/data/adapters/epl_xlsm.py"
       - "src/zk2/data/team_mapping.py"
@@ -33,11 +34,15 @@ jobs:
         run: curl --fail --location --retry 3 --output DATA.csv https://raw.githubusercontent.com/xsinanxaykacx-debug/trsuper/main/data/csv/DATA.csv
       - name: Build and validate locked dataset
         run: python scripts/build_locked_dataset.py DATA.csv EPL.xlsm --output zk2_locked_dataset.csv.gz --manifest zk2_dataset_manifest.json
-      - name: Upload locked dataset and manifest
+      - name: Audit existing sources for xG columns and row coverage
+        run: python scripts/audit_xg_source_schema.py DATA.csv EPL.xlsm --json audit-results/xg_source_schema.json --csv audit-results/xg_source_schema.csv
+      - name: Upload locked dataset, manifest, and xG schema audit
         uses: actions/upload-artifact@v4
         with:
           name: zk2-locked-dataset-v1
           path: |
             zk2_locked_dataset.csv.gz
             zk2_dataset_manifest.json
+            audit-results/xg_source_schema.json
+            audit-results/xg_source_schema.csv
           if-no-files-found: error
