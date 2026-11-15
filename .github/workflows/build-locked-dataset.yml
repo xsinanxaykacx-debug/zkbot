@@ -13,6 +13,7 @@ on:
       - "src/zk2/features/pipeline.py"
       - "src/zk2/models/baseline.py"
       - "scripts/run_xg_ablation.py"
+      - "scripts/train_market_models.py"
       - "tests/test_market_model_router.py"
       - "tests/test_xg_form.py"
       - "tests/test_xg_ablation.py"
@@ -69,13 +70,16 @@ jobs:
         run: python scripts/audit_openplay_xg_coverage.py EPL.xlsm provider-data/matches.parquet provider-data/team_match_stats.parquet provider-data/competitions.parquet --json audit-results/openplay_xg_coverage.json --csv audit-results/openplay_epl_match_xg.csv
       - name: Compare fixed LR with and without rolling xG on confirmation only
         run: python scripts/run_xg_ablation.py zk2_locked_dataset.csv.gz audit-results/openplay_epl_match_xg.csv --csv audit-results/xg_lr_paired_rows.csv --report audit-results/xg_lr_ablation.json --enriched-dataset zk2_xg_enriched_dataset.csv.gz
-      - name: Upload locked dataset, manifest, and xG audits
+      - name: Train source-aware market models on chronological training rows only
+        run: python scripts/train_market_models.py zk2_xg_enriched_dataset.csv.gz --output artifacts/zk2_market_models_xg.joblib
+      - name: Upload locked dataset, model bundle, manifest, and xG audits
         uses: actions/upload-artifact@v4
         with:
           name: zk2-locked-dataset-v1
           path: |
             zk2_locked_dataset.csv.gz
             zk2_xg_enriched_dataset.csv.gz
+            artifacts/zk2_market_models_xg.joblib
             zk2_dataset_manifest.json
             audit-results/xg_source_schema.json
             audit-results/xg_source_schema.csv
