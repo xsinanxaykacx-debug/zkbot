@@ -27,7 +27,7 @@ def is_xg_header(value: object) -> bool:
 
 
 def _coverage(values: list[object]) -> dict[str, Any]:
-    nonempty = [value for value in values if value is not None and str(value).strip() != ""]
+    nonempty = [value for value in values if not pd.isna(value) and str(value).strip() != ""]
     numeric = pd.to_numeric(pd.Series(nonempty, dtype="object"), errors="coerce")
     return {
         "non_null_rows": int(len(nonempty)),
