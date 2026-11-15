@@ -1,0 +1,47 @@
+name: Real-data ZK 2.0 features and baselines
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "scripts/build_locked_dataset.py"
+      - "scripts/run_real_baselines.py"
+      - "src/zk2/features/**"
+      - "src/zk2/models/**"
+      - "src/zk2/data/adapters/**"
+      - "src/zk2/data/splits.py"
+      - "EPL.xlsm"
+      - ".github/workflows/real-baselines.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  real-baselines:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout ZK 2.0 and EPL workbook
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install project
+        run: python -m pip install --upgrade pip && pip install -e .
+      - name: Download DATA.csv source
+        run: curl --fail --location --retry 3 --output DATA.csv https://raw.githubusercontent.com/xsinanxaykacx-debug/trsuper/main/data/csv/DATA.csv
+      - name: Build locked normalized dataset
+        run: python scripts/build_locked_dataset.py DATA.csv EPL.xlsm --output zk2_locked_dataset.csv.gz --manifest zk2_dataset_manifest.json
+      - name: Build chronological features and real-data baselines
+        run: python scripts/run_real_baselines.py zk2_locked_dataset.csv.gz --features zk2_features_v1.csv.gz --report zk2_real_baseline_report.json
+      - name: Upload locked data, features, and baseline report
+        uses: actions/upload-artifact@v4
+        with:
+          name: zk2-real-baseline-v1
+          path: |
+            zk2_locked_dataset.csv.gz
+            zk2_dataset_manifest.json
+            zk2_features_v1.csv.gz
+            zk2_real_baseline_report.json
+          if-no-files-found: error
