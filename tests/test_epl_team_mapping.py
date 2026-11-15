@@ -7,6 +7,8 @@ def test_epl_short_names_are_scoped_to_premier_league_identity():
     assert normalize_epl_team("Nott'm Forest") == "Nottingham Forest"
     assert normalize_epl_team("Brighton") == "Brighton & Hove Albion"
     assert normalize_epl_team("West Brom") == "West Bromwich Albion"
+    assert normalize_epl_team("WBA") == "West Bromwich Albion"
+    assert normalize_epl_team("Sheff Utd") == "Sheffield United"
     assert normalize_epl_team("Wolves") == "Wolverhampton Wanderers"
 
 
