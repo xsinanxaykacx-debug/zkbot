@@ -33,6 +33,7 @@ def test_pipeline_builds_all_feature_families_and_preserves_rows():
     assert result.loc[2, "elo_away_pre"] > 1500.0
 
 
+@pytest.mark.leakage
 def test_pipeline_future_score_changes_do_not_change_earlier_features():
     frame = _frame([
         (1, "2024-01-01", "A", "B", "L1", 2, 0),
@@ -51,6 +52,7 @@ def test_pipeline_future_score_changes_do_not_change_earlier_features():
     )
 
 
+@pytest.mark.leakage
 def test_pipeline_same_calendar_day_different_times_do_not_leak():
     frame = _frame([
         (1, "2024-01-01 10:00", "A", "B", "L1", 5, 0),
