@@ -58,10 +58,11 @@ def run_baselines(dataset_path: Path, features_path: Path, report_path: Path) ->
         }
         results[market] = market_result
 
+    odds_columns = [column for column in featured.columns if column.startswith("_odd_")]
     export_columns = [
         "_source_dataset", "_source_row", "_date", "_season", "_league_canonical",
         "_team_home_canonical", "_team_away_canonical", "home_score", "away_score",
-        "_y_1x2", "_y_ou25", "_y_kg", *FEATURES,
+        "_y_1x2", "_y_ou25", "_y_kg", *FEATURES, *odds_columns,
     ]
     missing_export = sorted(set(export_columns).difference(featured.columns))
     if missing_export:
