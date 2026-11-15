@@ -1,6 +1,6 @@
 {
   "dataset_id": "zk2-locked-v1",
-  "created_from_zkbot_commit": "632c067c607950c94d6ad0c60f844586b58c8d91",
+  "created_from_zkbot_commit": "aacd5d9ce1f9f16a173e93b7e8c8a46538b3ebe0",
   "sources": {
     "DATA.csv": {
       "repository": "xsinanxaykacx-debug/trsuper",
@@ -64,7 +64,7 @@
   },
   "validation": {
     "combined_rows": 11272,
-    "combined_columns": 55,
+    "combined_columns": 57,
     "canonical_teams": 102,
     "canonical_leagues": [
       "England Premier League",
@@ -82,13 +82,23 @@
   },
   "artifact": {
     "file": "zk2_locked_dataset.csv.gz",
-    "sha256": "4ec27e0460c8636b8f8334494e3662c2954bbe4c68eb9e1e37cf5fbbe8c7b6bc",
-    "size_bytes": 389839,
-    "workflow_run": "https://github.com/xsinanxaykacx-debug/zkbot/actions/runs/43719487823"
+    "sha256": "be93c2c2c9270105a7c093e882036a2b3d2b2892f135e1fade4f90814487b24e",
+    "size_bytes": 393993,
+    "workflow_run": "https://github.com/xsinanxaykacx-debug/zkbot/actions/runs/43719608665"
   },
+  "outcome_columns": [
+    "home_score",
+    "away_score",
+    "MSE",
+    "MSD",
+    "_y_1x2",
+    "_y_ou25",
+    "_y_kg"
+  ],
   "policy": {
     "raw_source_files_not_committed": true,
     "post_match_statistics_excluded": true,
+    "MSE_MSD_are_score_aliases_for_history_updates_not_model_features": true,
     "closing_odds_kept_separate_from_opening_odds": true,
     "missing_odds_remain_null": true,
     "target_labels_derived_from_final_scores": true
