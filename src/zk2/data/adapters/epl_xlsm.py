@@ -4,6 +4,7 @@ from __future__ import annotations
 from datetime import date, datetime
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
 from openpyxl import load_workbook
 
@@ -12,6 +13,25 @@ from zk2.data.targets import add_targets
 
 SHEET_NAME = "DATA"
 REQUIRED_COLUMNS = ("Tarih", "EvSahibi", "Deplasman", "MS_EvGol", "MS_DepGol")
+DUPLICATE_SUMMARY_COLUMNS = {
+    "_market_best_home_1x2": ("EnYüksekEvOranı__col_46", "EnYüksekEvOranı__col_67"),
+    "_market_average_home_1x2": ("OrtalamaEvOranı__col_47", "OrtalamaEvOranı__col_70"),
+    "_market_best_draw_1x2": ("EnYüksekBeraberlikOranı__col_48", "EnYüksekBeraberlikOranı__col_68"),
+    "_market_average_draw_1x2": ("OrtalamaBeraberlikOranı__col_49", "OrtalamaBeraberlikOranı__col_71"),
+    "_market_best_away_1x2": ("EnYüksekDepOranı__col_50", "EnYüksekDepOranı__col_69"),
+    "_market_average_away_1x2": ("OrtalamaDepOranı__col_51", "OrtalamaDepOranı__col_72"),
+    "_market_best_over25": ("EnYüksekÜst2,5__col_53", "EnYüksekÜst2,5__col_77"),
+    "_market_average_over25": ("OrtalamaÜst2,5__col_54", "OrtalamaÜst2,5__col_79"),
+    "_market_best_under25": ("EnYüksekAlt2,5__col_55", "EnYüksekAlt2,5__col_78"),
+    "_market_average_under25": ("OrtalamaAlt2,5__col_56", "OrtalamaAlt2,5__col_80"),
+    "_asian_handicap_line": ("AsyaHandikapı__col_58", "AsyaHandikapı__col_81"),
+    "_market_best_home_ah": ("EnYüksekEvHandikapOranı__col_59", "EnYüksekEvHandikapOranı__col_86"),
+    "_market_average_home_ah": ("OrtalamaEvHandikapOranı__col_60", "OrtalamaEvHandikapOranı__col_88"),
+    "_market_best_away_ah": ("EnYüksekDepHandikapOranı__col_61", "EnYüksekDepHandikapOranı__col_87"),
+    "_market_average_away_ah": ("OrtalamaDepHandikapOranı__col_62", "OrtalamaDepHandikapOranı__col_89"),
+}
+
+
 ODDS_COLUMNS = {
     "Bet365_Ev": "_odd_H_bet365_open",
     "Bet365_Beraberlik": "_odd_D_bet365_open",
@@ -55,6 +75,25 @@ def _parse_date(value: object):
 def _numeric(series: pd.Series) -> pd.Series:
     values = series.astype("string").str.strip().str.replace(",", ".", regex=False)
     return pd.to_numeric(values.replace({"": pd.NA, "nan": pd.NA, "None": pd.NA}), errors="coerce")
+
+
+def coalesce_duplicate_numeric_columns(
+    frame: pd.DataFrame, first_column: str, second_column: str
+) -> pd.Series:
+    """Merge disjoint/identical numeric source columns; reject conflicting overlaps."""
+    first = _numeric(frame[first_column])
+    second = _numeric(frame[second_column])
+    both = first.notna() & second.notna()
+    if both.any():
+        equal = pd.Series(
+            np.isclose(first.loc[both].to_numpy(), second.loc[both].to_numpy(), rtol=1e-9, atol=1e-12),
+            index=first.loc[both].index,
+        )
+        if not bool(equal.all()):
+            raise ValueError(
+                f"Conflicting values in duplicate source columns: {first_column}, {second_column}"
+            )
+    return first.combine_first(second)
 
 
 def _unique_headers(values: tuple[object, ...]) -> list[str]:
@@ -130,6 +169,9 @@ class EplXlsmAdapter:
         out["home_score"] = _numeric(out["MS_EvGol"])
         out["away_score"] = _numeric(out["MS_DepGol"])
         out = add_targets(out, "home_score", "away_score")
+        for target_col, (first_col, second_col) in DUPLICATE_SUMMARY_COLUMNS.items():
+            if first_col in out.columns and second_col in out.columns:
+                out[target_col] = coalesce_duplicate_numeric_columns(out, first_col, second_col)
         for source_col, target_col in ODDS_COLUMNS.items():
             if source_col in out.columns:
                 out[target_col] = _numeric(out[source_col])
