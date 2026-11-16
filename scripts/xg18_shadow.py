@@ -103,21 +103,37 @@ def predict(a):
     print(json.dumps({"status":"ok","predictions_written":len(events),"model_version":VERSION,"betting_enabled":False},indent=2))
 
 def add_odds(a):
-    rows=pd.read_csv(a.input); need={"MatchID","captured_at","home_odds","draw_odds","away_odds","source","is_closing"}
+    rows=pd.read_csv(a.input,keep_default_na=False)
+    need={"MatchID","captured_at","home_odds","draw_odds","away_odds","source"}
     if not need.issubset(rows): raise ValueError(f"Odds CSV missing {sorted(need-set(rows))}")
     ev=read_events(a.ledger); preds={x["match_id"]:x for x in ev if x["event_type"]=="prediction"}
+    provider_default=a.provider_id or "manual_csv"
     for r in rows.to_dict("records"):
-        mid=str(r["MatchID"])
-        if mid not in preds or str(r["source"]).casefold()!="pinnacle": raise ValueError(f"No prediction or non-Pinnacle source for {mid}")
-        t=utc(r["captured_at"])
-        if t>=utc(preds[mid]["kickoff_utc"]): raise ValueError("Odds timestamp must precede kickoff")
+        mid=str(r["MatchID"]).strip()
+        if mid not in preds: raise ValueError(f"No prediction for {mid}")
+        source=str(r["source"]).strip().casefold()
+        if source not in ("pinnacle","third_party"): raise ValueError("source must be pinnacle or third_party")
+        provider_id=str(r.get("provider_id") or provider_default).strip()
+        if not provider_id: raise ValueError("provider_id is required")
+        pinnacle_id=str(r.get("pinnacle_source_id") or "").strip() or None
+        t=utc(r["captured_at"]); kickoff=utc(r.get("kickoff_utc") or preds[mid]["kickoff_utc"])
+        if kickoff!=utc(preds[mid]["kickoff_utc"]): raise ValueError("CSV kickoff_utc does not match the immutable fixture prediction")
+        if t>=kickoff: raise ValueError("Odds timestamp must precede kickoff")
         o=np.array([float(r[k]) for k in ("home_odds","draw_odds","away_odds")])
         if not np.isfinite(o).all() or (o<=1).any(): raise ValueError("Decimal odds must be finite and >1")
-        inv=1/o; fair=inv/inv.sum(); close=str(r["is_closing"]).casefold() in ("true","1","yes","y")
-        append(a.ledger,{"event_id":str(uuid.uuid4()),"event_type":"odds_snapshot","recorded_at":datetime.now(timezone.utc).isoformat(),
-          "match_id":mid,"source":"Pinnacle","captured_at":t.isoformat().replace("+00:00","Z"),"is_closing":close,
-          "decimal_odds":o.tolist(),"fair_probs_1x2":fair.tolist(),"method":"proportional_overround_removal"})
-    print(json.dumps({"status":"ok","odds_snapshots_written":len(rows)},indent=2))
+        inv=1/o; fair=inv/inv.sum()
+        close=str(r.get("is_closing","false")).casefold() in ("true","1","yes","y")
+        if close and source!="pinnacle": raise ValueError("Third-party closing claims cannot be labelled as Pinnacle closing")
+        captured= t.isoformat().replace("+00:00","Z")
+        append(a.ledger,{"event_id":str(uuid.uuid4()),"event_type":"odds_snapshot",
+          "recorded_at":datetime.now(timezone.utc).isoformat(),"match_id":mid,"source":source,
+          "provider_id":provider_id,"pinnacle_source_id":pinnacle_id,"captured_at":captured,
+          "kickoff_utc":kickoff.isoformat().replace("+00:00","Z"),"is_closing":close,
+          "observed_closing_proxy":False,"snapshot_kind":str(r.get("snapshot_kind") or "live_snapshot"),
+          "decimal_odds":o.tolist(),"fair_probs_1x2":fair.tolist(),
+          "method":"proportional_overround_removal"})
+    print(json.dumps({"status":"ok","odds_snapshots_written":len(rows),
+      "provider_id":provider_default,"closing_proxy":"computed only after kickoff from the latest eligible snapshot within 120 seconds; never official Pinnacle closing"},indent=2))
 
 def settle(a):
     rows=pd.read_csv(a.input); need={"MatchID","FTHG","FTAG","result_available_at"}
@@ -175,7 +191,7 @@ def main():
     p=argparse.ArgumentParser(description="XG18 shadow ledger; no betting or tuning"); s=p.add_subparsers(dest="cmd",required=True)
     q=s.add_parser("predict"); q.add_argument("--history",required=True); q.add_argument("--fixtures",required=True); q.add_argument("--ledger",default="shadow/shadow_ledger.jsonl")
     q.add_argument("--model-module",default="research/xg18-frozen-source/xg18_frozen_model.py"); q.add_argument("--generated-at"); q.set_defaults(fn=predict)
-    q=s.add_parser("add-odds"); q.add_argument("--input",required=True); q.add_argument("--ledger",default="shadow/shadow_ledger.jsonl"); q.set_defaults(fn=add_odds)
+    q=s.add_parser("add-odds"); q.add_argument("--input",required=True); q.add_argument("--ledger",default="shadow/shadow_ledger.jsonl"); q.add_argument("--provider-id",default=""); q.set_defaults(fn=add_odds)
     q=s.add_parser("settle"); q.add_argument("--input",required=True); q.add_argument("--ledger",default="shadow/shadow_ledger.jsonl"); q.set_defaults(fn=settle)
     q=s.add_parser("report"); q.add_argument("--ledger",default="shadow/shadow_ledger.jsonl"); q.add_argument("--output",default="reports/xg18_shadow_report.json"); q.set_defaults(fn=report)
     a=p.parse_args()
