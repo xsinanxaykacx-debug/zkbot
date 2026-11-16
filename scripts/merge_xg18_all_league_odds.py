@@ -53,6 +53,28 @@ ALIASES = {
     "fatih karagumruk":"karagumruk","adana demirspor":"ad demirspor",
     "basaksehir":"buyuksehyr","gaziantep fk":"gaziantep",
     "caykur rizespor":"rizespor","ankaragucu":"mke ankaragucu",
+    # England League One: xG18 full names -> football-data odds abbreviations.
+    "wycombe wanderers":"wycombe",
+    "derby county":"derby",
+    "oxford united":"oxford",
+    "bolton wanderers":"bolton",
+    "peterborough united":"peterboro",
+    "accrington stanley":"accrington",
+    "charlton athletic":"charlton",
+    "forest green rovers":"forest green",
+    "cambridge united":"cambridge",
+    "ipswich town":"ipswich",
+    "lincoln city":"lincoln",
+    "exeter city":"exeter",
+    # Germany 2. Bundesliga: full club names -> odds CSV abbreviations.
+    "hannover 96":"hannover",
+    "jahn regensburg":"regensburg",
+    "arminia bielefeld":"bielefeld",
+    "1 fc nurnberg":"nurnberg",
+    "eintracht braunschweig":"braunschweig",
+    "hamburger sv":"hamburg",
+    "karlsruher sc":"karlsruhe",
+    "sc paderborn 07":"paderborn",
 }
 def norm(v):
     if v is None or pd.isna(v): return ""
@@ -106,7 +128,7 @@ def main():
     if eligible["_date"].isna().any(): raise ValueError("Invalid dates in official train/validation split rows")
     by_key=defaultdict(list)
     for r in records: by_key[(r["date"],r["code"],r["home"],r["away"])].append(r)
-    out=[]; status=Counter(); by_league=defaultdict(Counter)
+    out=[]; status=Counter(); by_league=defaultdict(Counter); unmatched_team_frequency=Counter(); unmatched_by_league=defaultdict(Counter)
     for idx,r in eligible.iterrows():
         league=norm(r["League"]); code=LEAGUE_TO_CODE.get(league)
         key=(r["_date"],code,team(r["HomeTeam"]),team(r["AwayTeam"]))
@@ -123,6 +145,11 @@ def main():
         elif cand: st="score_mismatch"
         else: st="no_candidate"
         status[st]+=1; by_league[str(r["League"])][st]+=1
+        if st == "no_candidate":
+            unmatched_team_frequency[str(r["HomeTeam"])] += 1
+            unmatched_team_frequency[str(r["AwayTeam"])] += 1
+            unmatched_by_league[str(r["League"])][str(r["HomeTeam"])] += 1
+            unmatched_by_league[str(r["League"])][str(r["AwayTeam"])] += 1
         row={c:r[c] for c in source_columns}; row.update({"xg_source_row":int(idx),"odds_match_status":st,"odds_source_file":chosen["file"] if chosen else None})
         if chosen:
             for c in odds_columns: row["odds_"+c]=chosen["row"].get(c)
@@ -135,7 +162,7 @@ def main():
         cols=[c for c in cols if c in matched]
         ok=matched[cols].notna().all(axis=1) if cols else pd.Series(False,index=matched.index)
         return {"complete_rows":int(ok.sum()),"matched_rows":int(len(matched)),"coverage_pct":round(100*ok.mean(),2) if len(matched) else 0.0}
-    summary={"xg18_rows":len(x),"official_train_validation_rows":len(eligible),"official_split_match_ids":len(include_ids),"xg_rows_excluded_outside_official_train_validation":int(len(x)-len(eligible)),"split_ids_missing_from_xg18":len(missing_ids),"odds_files":len(paths),"odds_source_rows":file_rows,"odds_valid_date_rows":len(records),"joined_rows":len(joined),"matched_rows":len(matched),"unmatched_rows":int(len(joined)-len(matched)),"status_counts":dict(status),"by_league":{k:{"total":sum(v.values()),"matched":v["matched"]+v["matched_identical_duplicate"],"statuses":dict(v)} for k,v in sorted(by_league.items())},"market_coverage_on_matched_rows":{"1x2_avg":cov(["odds_AvgH","odds_AvgD","odds_AvgA"]),"1x2_b365":cov(["odds_B365H","odds_B365D","odds_B365A"]),"ou25_avg":cov(["odds_Avg>2.5","odds_Avg<2.5"]),"ou25_b365":cov(["odds_B365>2.5","odds_B365<2.5"])},"league_csv_inventory":inventory,"final_test_rows_used":0,"policy":"official train+validation MatchID whitelist; final-test IDs excluded; exact date + mapped league + normalized home/away + FT score; ambiguous conflicts unmatched; original xG columns preserved; odds missing remain null"}
+    summary={"xg18_rows":len(x),"official_train_validation_rows":len(eligible),"official_split_match_ids":len(include_ids),"xg_rows_excluded_outside_official_train_validation":int(len(x)-len(eligible)),"split_ids_missing_from_xg18":len(missing_ids),"odds_files":len(paths),"odds_source_rows":file_rows,"odds_valid_date_rows":len(records),"joined_rows":len(joined),"matched_rows":len(matched),"unmatched_rows":int(len(joined)-len(matched)),"status_counts":dict(status),"unmatched_team_frequency_no_candidate":dict(unmatched_team_frequency.most_common(60)),"unmatched_teams_by_league_no_candidate":{k:dict(v.most_common(30)) for k,v in sorted(unmatched_by_league.items())},"by_league":{k:{"total":sum(v.values()),"matched":v["matched"]+v["matched_identical_duplicate"],"statuses":dict(v)} for k,v in sorted(by_league.items())},"market_coverage_on_matched_rows":{"1x2_avg":cov(["odds_AvgH","odds_AvgD","odds_AvgA"]),"1x2_b365":cov(["odds_B365H","odds_B365D","odds_B365A"]),"ou25_avg":cov(["odds_Avg>2.5","odds_Avg<2.5"]),"ou25_b365":cov(["odds_B365>2.5","odds_B365<2.5"])},"league_csv_inventory":inventory,"final_test_rows_used":0,"policy":"official train+validation MatchID whitelist; final-test IDs excluded; exact date + mapped league + normalized home/away + FT score; ambiguous conflicts unmatched; original xG columns preserved; odds missing remain null"}
     a.out.mkdir(parents=True,exist_ok=True)
     joined.to_csv(a.out/"xg18_with_all_league_odds.csv",index=False,encoding="utf-8")
     (a.out/"merge_report.json").write_text(json.dumps(summary,ensure_ascii=False,indent=2),encoding="utf-8")
