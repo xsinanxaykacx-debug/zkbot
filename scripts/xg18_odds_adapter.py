@@ -48,6 +48,8 @@ def normalize(item, mapping, provider_id, source):
         row[field] = float(row[field])
         if not (row[field] > 1 and row[field] < float("inf")):
             raise ValueError(f"{field} must be finite decimal odds > 1")
+    if source == "pinnacle" and provider_id != "pinnacle_official":
+        raise ValueError("Only provider_id=pinnacle_official may use source=pinnacle")
     row["source"] = source
     row["provider_id"] = provider_id
     p = mapping.get("pinnacle_source_id")
