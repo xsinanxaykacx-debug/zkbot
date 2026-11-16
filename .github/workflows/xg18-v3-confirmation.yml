@@ -1,0 +1,63 @@
+name: XG18 V3 independent threshold confirmation
+on:
+  push:
+    branches: [work/xg18-v3-confirmation]
+    paths:
+      - "scripts/train_xg18_v3.py"
+      - "scripts/split_xg18_confirmation.py"
+      - "scripts/compare_xg18_confirmation_thresholds.py"
+      - "scripts/xg18_v3_features.py"
+      - "scripts/xg18_v2_features.py"
+      - "scripts/xg18_v3_calibration.py"
+      - ".github/workflows/xg18-v3-confirmation.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  independent-confirmation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+      - name: Install model dependencies
+        run: python -m pip install -r requirements-xg18-v3.txt pytest
+      - name: Download official non-test chronological split
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh run download 43848824932 --repo ${{ github.repository }} --name zk2-xg18-split-v1-non-test --dir data
+          test -s data/xg18_train.csv
+          test -s data/xg18_val.csv
+      - name: Merge odds using official train-validation MatchID whitelist
+        run: |
+          python scripts/merge_xg18_all_league_odds.py --xg xg18.csv --odds-dir . --include-csv data/xg18_train.csv --include-csv data/xg18_val.csv --out artifacts/xg18_odds
+      - name: Attach odds to official partitions
+        run: |
+          python scripts/prepare_xg18_odds_splits.py --merged artifacts/xg18_odds/xg18_with_all_league_odds.csv --train data/xg18_train.csv --validation data/xg18_val.csv --outdir data
+      - name: Carve a forward confirmation set from official training rows only
+        run: |
+          python scripts/split_xg18_confirmation.py --input data/xg18_train_odds.csv --train-out data/confirmation_train.csv --confirm-out data/confirmation_holdout.csv --report reports/confirmation_split.json --train-fraction 0.80
+      - name: Verify feature leakage tests
+        run: PYTHONPATH=scripts python -m pytest -q tests/test_prematch_features.py tests/test_v3_features.py tests/test_v3_market_features.py
+      - name: Fit on earlier rows and score untouched confirmation rows
+        run: |
+          python scripts/train_xg18_v3.py --train data/confirmation_train.csv --validation data/confirmation_holdout.csv --outdir reports --trials 3
+      - name: Compare pre-registered 0.64 and 0.65 thresholds
+        run: |
+          python scripts/compare_xg18_confirmation_thresholds.py --predictions reports/xg18_v3_validation_predictions.csv --output reports/confirmation_threshold_comparison.json --bootstrap 30000
+      - uses: actions/upload-artifact@v4
+        with:
+          name: xg18-v3-independent-threshold-confirmation
+          path: |
+            artifacts/xg18_odds/merge_report.json
+            reports/confirmation_split.json
+            reports/xg18_v3_report.json
+            reports/xg18_v3_validation_predictions.csv
+            reports/confirmation_threshold_comparison.json
+          if-no-files-found: error
+          retention-days: 90
