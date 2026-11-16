@@ -107,7 +107,7 @@ def main():
     for label,df in (("train",tr),("validation",va)):
         missing=required-set(df.columns)
         if missing:raise ValueError(f"{label} missing {sorted(missing)}")
-    if len(tr)!=12971 or len(va)!=2763:raise ValueError("Unexpected split sizes; refusing silent dataset drift")
+    if len(tr)<1000 or len(va)<300:raise ValueError(f"Custom chronological split too small: train={len(tr)}, validation={len(va)}")
     if pd.to_datetime(tr.Date,utc=True).max()>=pd.to_datetime(va.Date,utc=True).min():raise ValueError("Train/validation chronology violation")
     all_df=pd.concat([tr,va],ignore_index=True);feat=build_prematch_features(all_df);FEATURE_COLUMNS=list(feat.columns)
     X=feat.copy()
@@ -145,14 +145,27 @@ def main():
     models={}
     for kind in kinds:
         model=make_pipeline(kind,best[kind]);model.fit(Xt,y);models[kind]=model
-    raw=np.einsum("m,mnc->nc",weights,np.stack([models[k].predict_proba(Xv) for k in kinds]))
+    individual_probs={k:models[k].predict_proba(Xv) for k in kinds}
+    raw=np.einsum("m,mnc->nc",weights,np.stack([individual_probs[k] for k in kinds]))
     probs=apply_calibrator(raw,cal)
+    uniform_raw=np.mean(np.stack([individual_probs[k] for k in kinds]),axis=0)
+    uniform_probs=apply_calibrator(uniform_raw,cal)
+    oof_single_logloss={k:float(log_loss(yo,oofs[k][valid],labels=[0,1,2])) for k in kinds}
+    oof_uniform=np.mean(np.stack(preds),axis=0)
+    oof_uniform_logloss=float(log_loss(yo,oof_uniform,labels=[0,1,2]))
+    oof_weighted_logloss=float(log_loss(yo,full_mix,labels=[0,1,2]))
     report={"model":"XG18 v3 XGBoost+LightGBM+CatBoost ensemble","training_rows":len(tr),"validation_rows":len(va),
       "validation_outcomes_used_for_fit_tuning_weights_or_calibration":False,
       "validation_state_policy":"Past validation-day results update rolling state for later validation dates only; same-day results are hidden until all same-day fixtures are featurized.",
       "feature_policy":"pre-match rolling history only; no current-match statistics; UTC-day batch replay",
       "feature_count":len(FEATURE_COLUMNS),"categorical_features":CATS,"chronological_folds":5,"optuna_trials_per_model":a.trials,
-      "best_params":best,"cv_logloss_by_model":cv_scores,"ensemble_weights":dict(zip(kinds,weights)),
+      "best_params":best,"cv_logloss_by_model":cv_scores,
+      "oof_single_model_logloss":oof_single_logloss,
+      "oof_uniform_ensemble_logloss":oof_uniform_logloss,
+      "oof_optimized_ensemble_logloss":oof_weighted_logloss,
+      "ensemble_weights":dict(zip(kinds,weights)),
+      "validation_metrics_by_single_model":{k:metrics(apply_calibrator(individual_probs[k],cal),yv) for k in kinds},
+      "validation_uniform_ensemble":metrics(uniform_probs,yv),
       "calibration_selection":"lowest log loss on final two training OOF folds; candidates none/temperature/Platt/isotonic",
       "calibration_oof_logloss":cal_scores,"selected_calibration":chosen,"validation":metrics(probs,yv)}
     bundle={"models":models,"weights":weights,"calibrator":cal,"features":FEATURE_COLUMNS,"categorical_features":CATS}
