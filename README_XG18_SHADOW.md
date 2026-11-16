@@ -33,7 +33,8 @@ Templates are in `research/shadow_*_template.csv`. An example configurable API f
 
 ```bash
 python scripts/xg18_shadow.py predict --history data/xg18_train_validation.csv --fixtures data/upcoming_fixtures.csv --ledger shadow/shadow_ledger.jsonl
-python scripts/xg18_odds_adapter.py api --url "https://pinnodds.com/kit/v1/prematch/fixtures?sport_id=1" --provider-id pinnodds --api-key-env PINNODDS_API_KEY --auth-header x-portal-apikey --auth-prefix "" --records-path events --mapping research/pinnodds_mapping.example.json --output data/normalized_odds.csv\npython scripts/xg18_shadow.py add-odds --input data/normalized_odds.csv --ledger shadow/shadow_ledger.jsonl
+python scripts/xg18_odds_adapter.py api --url "https://pinnodds.com/kit/v1/prematch/fixtures?sport_id=1" --provider-id pinnodds --api-key-env PINNODDS_API_KEY --auth-header x-portal-apikey --auth-prefix "" --records-path events --mapping research/pinnodds_mapping.example.json --output data/normalized_odds.csv
+python scripts/xg18_shadow.py add-odds --input data/normalized_odds.csv --ledger shadow/shadow_ledger.jsonl
 python scripts/xg18_shadow.py settle --input data/settled_results.csv --ledger shadow/shadow_ledger.jsonl
 python scripts/xg18_shadow.py report --ledger shadow/shadow_ledger.jsonl --output reports/xg18_shadow_report.json
 ```
