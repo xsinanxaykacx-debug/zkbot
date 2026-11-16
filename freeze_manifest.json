@@ -3,7 +3,7 @@
   "model_id": "zk2-xg18-frozen-ensemble-v1",
   "freeze_date": "2026-11-16",
   "status": "FROZEN",
-  "model_code_commit": "55ead1a13a207c3641f74c5692630167605bc22d",
+  "model_code_commit": "0473c5b8e58181b18a0262a7a2107eb81e1f1f3e",
   "repository": "xsinanxaykacx-debug/zkbot",
   "branch": "research/xg18-frozen-ensemble-v1",
   "model_scope": "1X2 probability ensemble only; OU2.5 and BTTS are not part of this frozen ensemble",
@@ -79,6 +79,40 @@
   "code_archive": {
     "path": "research/xg18-frozen-source.zip",
     "sha256": "7b69c44f1cb08436680951ee12b8a0c48f579e73538bbaf3b98ed2c911fabc3d",
+    "size_bytes": 9974,
+    "assembly_command": "research/assemble_xg18_source.cmd",
+    "parts": [
+      {
+        "path": "research/xg18-frozen-source.zip.part00",
+        "size_bytes": 1800,
+        "sha256": "c111ea38fefec52d59267a95cf6296673350273f48af0f3acc8367eababcaa5d"
+      },
+      {
+        "path": "research/xg18-frozen-source.zip.part01",
+        "size_bytes": 1800,
+        "sha256": "1aba88ffddbe3165457cf085248f7fdd3ccd239ac69b4fca7bf7e5ccec86377a"
+      },
+      {
+        "path": "research/xg18-frozen-source.zip.part02",
+        "size_bytes": 1800,
+        "sha256": "a365e653403d57b5ffaba3af3f76c8fef68cfeea97db0919805fc6d0365fde00"
+      },
+      {
+        "path": "research/xg18-frozen-source.zip.part03",
+        "size_bytes": 1800,
+        "sha256": "ca06a372a0118a8de228cc8a661bcc07989d32e50988a6d22f7d8a3f25fef692"
+      },
+      {
+        "path": "research/xg18-frozen-source.zip.part04",
+        "size_bytes": 1800,
+        "sha256": "f0febeb96d2ad18368d65a266feb134bdf62f62abacf4c8d4531332a9540f031"
+      },
+      {
+        "path": "research/xg18-frozen-source.zip.part05",
+        "size_bytes": 974,
+        "sha256": "c65a2cc2476f2e5047da3477db12453ca4b98b773a795a4ff6c6e37c61b22b55"
+      }
+    ],
     "contents": [
       "xg18_frozen_model.py",
       "evaluate_xg18_final_test.py",
