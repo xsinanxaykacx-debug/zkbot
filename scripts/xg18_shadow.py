@@ -130,7 +130,7 @@ def add_odds(a):
           "recorded_at":datetime.now(timezone.utc).isoformat(),"match_id":mid,"source":source,
           "provider_id":provider_id,"pinnacle_source_id":pinnacle_id,"captured_at":captured,
           "kickoff_utc":kickoff.isoformat().replace("+00:00","Z"),"is_closing":close,
-          "observed_closing_proxy":False,"snapshot_kind":str(r.get("snapshot_kind") or "live_snapshot"),
+          "observed_closing_proxy":False,"snapshot_kind":str(r.get("snapshot_kind") or "live_snapshot"),\n          "provider_league":str(r.get("provider_league") or ""),"provider_home_team":str(r.get("provider_home_team") or ""),\n          "provider_away_team":str(r.get("provider_away_team") or ""),"timestamp_semantics":str(r.get("timestamp_semantics") or "legacy_csv_unverified"),
           "decimal_odds":o.tolist(),"fair_probs_1x2":fair.tolist(),
           "method":"proportional_overround_removal"})
     print(json.dumps({"status":"ok","odds_snapshots_written":len(rows),
