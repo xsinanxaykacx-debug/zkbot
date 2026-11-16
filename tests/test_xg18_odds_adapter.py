@@ -38,6 +38,28 @@ class OddsAdapterTests(unittest.TestCase):
         self.assertEqual(row["captured_at"], "2026-11-20T17:58:30Z")
         self.assertFalse(row["is_closing"])
 
+    def test_provider_event_id_is_not_pinnacle_source_id(self):
+        mapping = dict(MAPPING, provider_event_id="provider_id")
+        record = dict(self.record, provider_id="event-123")
+        row = normalize(record, mapping, "pinnodds", "third_party")
+        self.assertEqual(row["provider_event_id"], "event-123")
+        self.assertEqual(row["pinnacle_source_id"], "")
+
+    def test_synthetic_fixture_has_16_rows_and_pre_kickoff_times(self):
+        path = Path(__file__).parents[1] / "research" / "shadow_odds_synthetic_16.csv"
+        with path.open(newline="", encoding="utf-8") as f:
+            rows = list(csv.DictReader(f))
+        self.assertEqual(len(rows), 16)
+        for row in rows:
+            with self.subTest(match=row["MatchID"]):
+                self.assertEqual(row["source"], "third_party")
+                self.assertEqual(row["provider_id"], "synthetic_fixture")
+                self.assertEqual(row["timestamp_semantics"], "synthetic_fixture_only")
+                self.assertLess(
+                    __import__("datetime").datetime.fromisoformat(row["captured_at"].replace("Z","+00:00")),
+                    __import__("datetime").datetime.fromisoformat(row["kickoff_utc"].replace("Z","+00:00")),
+                )
+
     def test_timezone_offset_is_normalized_to_utc(self):
         record = dict(self.record, updated_at="2026-11-20T20:58:30+03:00")
         row = normalize(record, MAPPING, "pinnapi", "third_party")
