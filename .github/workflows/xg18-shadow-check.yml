@@ -5,7 +5,9 @@ on:
     branches:
       - research/xg18-shadow-production
     paths:
-      - "scripts/xg18_shadow.py"\n      - "scripts/xg18_odds_adapter.py"\n      - "tests/test_xg18_odds_adapter.py"
+      - "scripts/xg18_shadow.py"
+      - "scripts/xg18_odds_adapter.py"
+      - "tests/test_xg18_odds_adapter.py"
       - ".github/workflows/xg18-shadow-check.yml"
   workflow_dispatch:
 
