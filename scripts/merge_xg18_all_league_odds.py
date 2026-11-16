@@ -91,6 +91,7 @@ ALIASES = {
     "bradford city":"bradford",
     "doncaster rovers":"doncaster",
     "luton town":"luton",
+    "mansfield town":"mansfield",
     # Additional 2. Bundesliga abbreviations verified against all five D2 files.
     "fc heidenheim":"heidenheim",
     "vfl osnabruck":"osnabruck",
