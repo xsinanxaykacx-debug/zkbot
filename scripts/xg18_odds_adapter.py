@@ -158,17 +158,24 @@ def api_command(a):
         else:
             body = json.dumps(raw).encode("utf-8")
             headers["Content-Type"] = "application/json"
+    if a.max_attempts < 1 or a.timeout < 1 or a.backoff < 0 or a.max_backoff < 0:
+        raise ValueError("retry attempts/timeout must be positive and backoff values non-negative")
     req = urllib.request.Request(a.url, data=body, headers=headers, method=a.method)
     # Retry only transient transport errors, HTTP 429 and 5xx. Never retry other 4xx.
     payload = None
+    request_started = time.monotonic()
+    http_status = None
     for attempt in range(a.max_attempts):
         try:
             with urllib.request.urlopen(req, timeout=a.timeout) as response:
+                http_status = response.status
                 if response.status != 200:
                     if response.status == 429 or 500 <= response.status <= 599:
                         raise urllib.error.HTTPError(a.url, response.status, "transient provider response", response.headers, None)
                     raise ValueError(f"provider HTTP status {response.status}")
                 payload = json.loads(response.read().decode("utf-8"))
+            print(json.dumps({"event":"provider_response","provider_id":a.provider_id,"http_status":http_status,
+                              "elapsed_seconds":round(time.monotonic()-request_started,3),"credentials_logged":False}), file=sys.stderr)
             break
         except urllib.error.HTTPError as exc:
             transient = exc.code == 429 or 500 <= exc.code <= 599
@@ -199,6 +206,8 @@ def api_command(a):
         except (KeyError, IndexError):
             skipped_incomplete += 1
     rows = apply_match_map(rows, a.match_map)
+    print(json.dumps({"event":"provider_normalized","provider_id":a.provider_id,"records":len(rows),
+                      "skipped_incomplete":skipped_incomplete,"credentials_logged":False}), file=sys.stderr)
     write_rows(rows, a.output)
     print(json.dumps({"status":"normalized_not_verified","provider_id":a.provider_id,
                       "records":len(rows),"skipped_incomplete":skipped_incomplete,
