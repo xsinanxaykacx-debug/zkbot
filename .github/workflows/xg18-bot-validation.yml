@@ -51,7 +51,7 @@ jobs:
       - name: Evaluate frozen model on chronological validation
         run: |
           python scripts/evaluate_xg18_validation.py --train data/xg18_train.csv --validation data/xg18_val.csv --predictions reports/xg18_validation_predictions.csv --report reports/xg18_validation_report.json
-      - name: Smoke-test upcoming-fixture bot CLI
+      - name: Smoke-test self-contained upcoming-fixture bot
         run: |
           python - <<'PY'
           import pandas as pd
@@ -61,7 +61,9 @@ jobs:
           f.to_csv('/tmp/smoke-fixtures.csv',index=False)
           print('smoke_fixture_date',first,'rows',len(f))
           PY
+          rm -rf frozen_src xg18-frozen-source.zip
           python scripts/xg18_bot.py --history data/xg18_train.csv --fixtures /tmp/smoke-fixtures.csv --output reports/xg18_bot_smoke.csv --confidence-threshold 0.65
+          test -s frozen_src/xg18_frozen_model.py
       - name: Upload validation report and predictions
         uses: actions/upload-artifact@v4
         with:
