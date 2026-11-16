@@ -115,6 +115,7 @@ def add_odds(a):
         if source not in ("pinnacle","third_party"): raise ValueError("source must be pinnacle or third_party")
         provider_id=str(r.get("provider_id") or provider_default).strip()
         if not provider_id: raise ValueError("provider_id is required")
+        if source=="pinnacle" and provider_id!="pinnacle_official": raise ValueError("Only provider_id=pinnacle_official may be labelled as Pinnacle-origin data")
         pinnacle_id=str(r.get("pinnacle_source_id") or "").strip() or None
         t=utc(r["captured_at"]); kickoff=utc(r.get("kickoff_utc") or preds[mid]["kickoff_utc"])
         if kickoff!=utc(preds[mid]["kickoff_utc"]): raise ValueError("CSV kickoff_utc does not match the immutable fixture prediction")
