@@ -158,7 +158,7 @@ def metric(p,y):
 
 def report(a):
     ev=read_events(a.ledger); preds={x["match_id"]:x for x in ev if x["event_type"]=="prediction"}
-    res={x["match_id"]:x for x in ev if x["event_type"]=="result"}; odds={x["match_id"]:x for x in ev if x["event_type"]=="odds_snapshot" and x.get("is_closing")}
+    res={x["match_id"]:x for x in ev if x["event_type"]=="result"}; odds={x["match_id"]:x for x in ev if x["event_type"]=="odds_snapshot" and x.get("is_closing") and x.get("source")=="pinnacle" and x.get("provider_id")=="pinnacle_official"}
     ids=sorted(set(preds)&set(res))
     if not ids: print(json.dumps({"status":"insufficient_data","settled":0},indent=2)); return
     def yy(ms): return np.array([0 if res[x]["home_goals"]>res[x]["away_goals"] else (1 if res[x]["home_goals"]==res[x]["away_goals"] else 2) for x in ms])
@@ -178,6 +178,27 @@ def report(a):
     mi=[x for x in ids if x in odds]
     if mi: out["market_comparison"]={"n":len(mi),"source":"Pinnacle","de_vig":"proportional_overround_removal",
       "ensemble_1x2":metric(pp(mi,"probabilities_1x2"),yy(mi)),"pinnacle_fair_1x2":metric(np.array([odds[x]["fair_probs_1x2"] for x in mi]),yy(mi))}
+    # Observed closing proxy is a separate diagnostic, never official Pinnacle closing.
+    proxy={}
+    for mid in ids:
+        kickoff=utc(preds[mid]["kickoff_utc"])
+        eligible=[]
+        for snap in ev:
+            if snap.get("event_type")!="odds_snapshot" or snap.get("match_id")!=mid: continue
+            captured=utc(snap["captured_at"]); age=(kickoff-captured).total_seconds()
+            if 0 <= age <= 120: eligible.append((captured,snap))
+        if eligible:
+            snap=max(eligible,key=lambda z:z[0])[1]
+            proxy[mid]=snap
+    out["observed_closing_proxy"]={"window_seconds":120,"n":len(proxy),
+      "status":"proxy_only_not_official_pinnacle_closing",
+      "providers":dict((pid,sum(1 for x in proxy.values() if x.get("provider_id")==pid))
+        for pid in sorted({x.get("provider_id","unknown") for x in proxy.values()}))}
+    if proxy:
+        px=sorted(proxy)
+        out["observed_closing_proxy"]["ensemble_1x2"]=metric(pp(px,"probabilities_1x2"),yy(px))
+        out["observed_closing_proxy"]["provider_fair_1x2"]=metric(
+          np.array([proxy[x]["fair_probs_1x2"] for x in px]),yy(px))
     for lg in sorted({preds[x]["league"] for x in ids}):
         ms=[x for x in ids if preds[x]["league"]==lg]; out["by_league"][lg]=metric(pp(ms,"probabilities_1x2"),yy(ms))
     times=[utc(preds[x]["generated_at"]) for x in ids]; days=(max(times)-min(times)).days
