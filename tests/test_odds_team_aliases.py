@@ -66,3 +66,28 @@ def test_germany_2_bundesliga_odds_aliases():
 def test_alias_matching_preserves_non_alias_normalization():
     assert MODULE.team("Manchester United") == MODULE.team("Man United")
     assert MODULE.team("St. Pauli") == MODULE.team("St Pauli")
+
+
+
+def test_spain_segunda_odds_aliases():
+    cases = {
+        "Racing Santander": "santander",
+        "Burgos CF": "burgos",
+        "CD Mirandés": "mirandes",
+        "FC Andorra": "andorra",
+        "SD Huesca": "huesca",
+        "AD Ceuta FC": "ceuta",
+        "Deportivo A Coruña": "la coruna",
+        "Real Zaragoza": "zaragoza",
+        "Real Sociedad B": "sociedad b",
+        "Sporting Gijón": "sp gijon",
+        "Real Oviedo": "oviedo",
+        "Cultural Leonesa": "cultural leonesa",
+        "CD Castellón": "castellon",
+        "Córdoba": "cordoba",
+        "Málaga CF": "malaga",
+        "UD Almería": "almeria",
+        "SD Ponferradina": "ponferradina",
+    }
+    for source, expected in cases.items():
+        assert MODULE.team(source) == expected
