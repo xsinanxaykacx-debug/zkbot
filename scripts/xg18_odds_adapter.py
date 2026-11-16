@@ -37,7 +37,7 @@ def utc_iso(value):
 
 def normalize(item, mapping, provider_id, source):
     row = {}
-    for field in ("MatchID", "kickoff_utc", "captured_at", "home_odds", "draw_odds", "away_odds"):
+    for field in ("MatchID", "kickoff_utc", "home_odds", "draw_odds", "away_odds"):
         row[field] = value_at(item, mapping[field])
     row["MatchID"] = str(row["MatchID"]).strip()
     if not row["MatchID"]:
