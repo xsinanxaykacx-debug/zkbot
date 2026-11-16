@@ -51,11 +51,23 @@ jobs:
       - name: Evaluate frozen model on chronological validation
         run: |
           python scripts/evaluate_xg18_validation.py --train data/xg18_train.csv --validation data/xg18_val.csv --predictions reports/xg18_validation_predictions.csv --report reports/xg18_validation_report.json
-      - name: Upload reproducible validation outputs
+      - name: Smoke-test upcoming-fixture bot CLI
+        run: |
+          python - <<'PY'
+          import pandas as pd
+          v=pd.read_csv('data/xg18_val.csv')
+          first=v['Date'].iloc[0][:10]
+          f=v[v['Date'].str[:10] == first][['League','Season','Date','HomeTeam','AwayTeam']]
+          f.to_csv('/tmp/smoke-fixtures.csv',index=False)
+          print('smoke_fixture_date',first,'rows',len(f))
+          PY
+          python scripts/xg18_bot.py --history data/xg18_train.csv --fixtures /tmp/smoke-fixtures.csv --output reports/xg18_bot_smoke.csv --confidence-threshold 0.65
+      - name: Upload validation report and predictions
         uses: actions/upload-artifact@v4
         with:
           name: xg18-bot-validation-results
           path: |
             reports/xg18_validation_predictions.csv
             reports/xg18_validation_report.json
+            reports/xg18_bot_smoke.csv
           if-no-files-found: error
