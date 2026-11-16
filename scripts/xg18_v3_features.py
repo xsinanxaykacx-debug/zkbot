@@ -36,7 +36,7 @@ def _market_features(matches: pd.DataFrame) -> pd.DataFrame:
         out[f"market_{prefix}_p_over25"]=implied[:,0]
         out[f"market_{prefix}_p_under25"]=implied[:,1]
         out[f"market_{prefix}_ou25_overround"]=margin
-        out[f"market_{label}_present"]=valid.astype(float)
+        out[f"market_{label}"]=valid.astype(float)
     add_1x2("avg",["odds_AvgH","odds_AvgD","odds_AvgA"],"avg_1x2_present")
     add_1x2("b365",["odds_B365H","odds_B365D","odds_B365A"],"b365_1x2_present")
     add_ou("avg",["odds_Avg>2.5","odds_Avg<2.5"],"avg_ou25_present")
