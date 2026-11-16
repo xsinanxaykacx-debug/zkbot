@@ -25,7 +25,7 @@ TEAM_ALIASES = {
     "atletico": "atletico madrid", "psg": "paris saint germain",
     "paris sg": "paris saint germain", "porto": "fc porto",
     "ajax amsterdam": "ajax", "psv eindhoven": "psv",
-    "caykur rizespor": "rizespor",
+    "caykur rizespor": "rizespor", "ankaragucu": "mke ankaragucu",
 }
 ODDS = [
     "_odd_H", "_odd_D", "_odd_A", "_odd_under25", "_odd_over25",
@@ -94,12 +94,11 @@ def main() -> None:
 
     rows, statuses = [], Counter()
     by_league = defaultdict(Counter)
-    xg_team_names = defaultdict(set)
+    zk_league_set = set(zk["_league_canonical"].dropna().unique())
     for _, row in xg.iterrows():
         league = str(row["League"])
         lk = row["_league_key"]
-        xg_team_names[league].update([str(row["HomeTeam"]), str(row["AwayTeam"])])
-        if lk not in set(zk["_league_canonical"].dropna().unique()):
+        if lk not in zk_league_set:
             candidates = []
             status = "league_not_in_zk"
         else:
