@@ -5,7 +5,7 @@
   "home_odds": "periods.num_0.money_line.home",
   "draw_odds": "periods.num_0.money_line.draw",
   "away_odds": "periods.num_0.money_line.away",
-  "pinnacle_source_id": "event_id",
+  "provider_event_id": "event_id",
   "snapshot_kind": "event_type",
   "provider_league": "league_name",
   "provider_home_team": "home",
