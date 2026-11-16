@@ -10,7 +10,7 @@ This is an isolated challenger to the frozen XG18 Team Poisson + Elo baseline. I
 - Injury, referee, squad-value, and weather fields are excluded because this dataset does not establish when those values became available before kickoff.
 - Optuna tunes XGBoost using chronological folds inside the training partition only.
 - Temperature calibration is fitted from training-only out-of-fold predictions.
-- Validation outcomes are not used for feature generation, tuning, or calibration.
+- Validation outcomes are never used to fit, tune, or calibrate the model. In the chronological replay, earlier validation-day results update rolling form/Elo state for later validation dates only; same-day fixtures are all predicted before any same-day result is applied.
 
 ## Current development comparison
 
