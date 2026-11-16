@@ -75,6 +75,28 @@ ALIASES = {
     "hamburger sv":"hamburg",
     "karlsruher sc":"karlsruhe",
     "sc paderborn 07":"paderborn",
+    # Additional League One abbreviations verified against all five E2 files.
+    "burton albion":"burton",
+    "shrewsbury town":"shrewsbury",
+    "northampton town":"northampton",
+    "wigan athletic":"wigan",
+    "cheltenham town":"cheltenham",
+    "plymouth argyle":"plymouth",
+    "huddersfield town":"huddersfield",
+    "stockport county":"stockport",
+    "rotherham united":"rotherham",
+    "carlisle united":"carlisle",
+    "birmingham city":"birmingham",
+    "cardiff city":"cardiff",
+    "bradford city":"bradford",
+    "doncaster rovers":"doncaster",
+    "luton town":"luton",
+    # Additional 2. Bundesliga abbreviations verified against all five D2 files.
+    "fc heidenheim":"heidenheim",
+    "vfl osnabruck":"osnabruck",
+    "wehen wiesbaden":"wehen",
+    "dynamo dresden":"dresden",
+    "fortuna dusseldorf":"fortuna dusseldorf",
 }
 def norm(v):
     if v is None or pd.isna(v): return ""
