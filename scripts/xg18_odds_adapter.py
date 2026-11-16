@@ -133,10 +133,18 @@ def api_command(a):
     if not isinstance(records, list):
         raise ValueError("records-path must resolve to a JSON array")
     mapping = json.loads(Path(a.mapping).read_text(encoding="utf-8"))
-    rows = [normalize(x, mapping, a.provider_id, a.source) for x in records]
+    rows = []
+    skipped_incomplete = 0
+    for item in records:
+        try:
+            rows.append(normalize(item, mapping, a.provider_id, a.source))
+        except (KeyError, IndexError):
+            skipped_incomplete += 1
+    rows = apply_match_map(rows, a.match_map)
     write_rows(rows, a.output)
     print(json.dumps({"status":"normalized_not_verified","provider_id":a.provider_id,
-                      "records":len(rows),"output":a.output,"credentials_logged":False}, indent=2))
+                      "records":len(rows),"skipped_incomplete":skipped_incomplete,
+                      "output":a.output,"credentials_logged":False}, indent=2))
 
 def csv_command(a):
     mapping = json.loads(Path(a.mapping).read_text(encoding="utf-8"))
