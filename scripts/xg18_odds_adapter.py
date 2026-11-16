@@ -5,6 +5,7 @@ import csv
 import json
 import os
 import sys
+import time
 import urllib.error
 import urllib.request
 from datetime import datetime, timezone
@@ -35,6 +36,37 @@ def utc_iso(value):
     if d.tzinfo is None:
         raise ValueError("timestamps must include timezone; naive local time is rejected")
     return d.astimezone(timezone.utc).isoformat().replace("+00:00", "Z")
+
+def validate_normalized_row(row):
+    """Strict common-schema validation; timestamps must be explicit UTC instants."""
+    required = set(FIELDS)
+    missing = [k for k in required if k not in row or row[k] is None or str(row[k]).strip() == ""]
+    # pinnacle_source_id is optional; preserve an empty value in the CSV schema.
+    missing = [k for k in missing if k != "pinnacle_source_id"]
+    if missing:
+        raise ValueError(f"normalized row missing required fields: {sorted(missing)}")
+    if row["source"] not in ("pinnacle", "third_party"):
+        raise ValueError("source must be pinnacle or third_party")
+    if not row["provider_id"].strip():
+        raise ValueError("provider_id is required")
+    if row["source"] == "pinnacle" and row["provider_id"] != "pinnacle_official":
+        raise ValueError("third-party providers cannot identify as official Pinnacle")
+    if row["source"] == "third_party" and row["provider_id"] == "pinnacle_official":
+        raise ValueError("pinnacle_official cannot be used for third-party data")
+    kickoff = datetime.fromisoformat(row["kickoff_utc"].replace("Z", "+00:00"))
+    captured = datetime.fromisoformat(row["captured_at"].replace("Z", "+00:00"))
+    if kickoff.tzinfo is None or captured.tzinfo is None:
+        raise ValueError("timestamps must include timezone")
+    if captured >= kickoff:
+        raise ValueError("captured_at must precede kickoff")
+    import math
+    for field in ("home_odds", "draw_odds", "away_odds"):
+        value = float(row[field])
+        if not math.isfinite(value) or value <= 1:
+            raise ValueError(f"{field} must be finite decimal odds > 1")
+    if row["is_closing"] and row["source"] != "pinnacle":
+        raise ValueError("third-party snapshots cannot claim official Pinnacle closing")
+    return row
 
 def normalize(item, mapping, provider_id, source):
     row = {}
@@ -67,7 +99,7 @@ def normalize(item, mapping, provider_id, source):
     row["snapshot_kind"] = str(value_at(item, k)) if k else "live_snapshot"
     c = mapping.get("is_closing")
     row["is_closing"] = str(value_at(item, c)).lower() in ("true", "1", "yes") if c else False
-    return row
+    return validate_normalized_row(row)
 
 def apply_match_map(rows, path):
     if not path:
@@ -125,10 +157,34 @@ def api_command(a):
             body = json.dumps(raw).encode("utf-8")
             headers["Content-Type"] = "application/json"
     req = urllib.request.Request(a.url, data=body, headers=headers, method=a.method)
-    with urllib.request.urlopen(req, timeout=a.timeout) as response:
-        if response.status != 200:
-            raise ValueError(f"provider HTTP status {response.status}")
-        payload = json.loads(response.read().decode("utf-8"))
+    # Retry only transient transport errors, HTTP 429 and 5xx. Never retry other 4xx.
+    payload = None
+    for attempt in range(a.max_attempts):
+        try:
+            with urllib.request.urlopen(req, timeout=a.timeout) as response:
+                if response.status != 200:
+                    if response.status == 429 or 500 <= response.status <= 599:
+                        raise urllib.error.HTTPError(a.url, response.status, "transient provider response", response.headers, None)
+                    raise ValueError(f"provider HTTP status {response.status}")
+                payload = json.loads(response.read().decode("utf-8"))
+            break
+        except urllib.error.HTTPError as exc:
+            transient = exc.code == 429 or 500 <= exc.code <= 599
+            if not transient or attempt + 1 >= a.max_attempts:
+                raise
+            retry_after = exc.headers.get("Retry-After") if exc.headers else None
+            try:
+                delay = min(a.max_backoff, float(retry_after)) if retry_after else min(a.max_backoff, a.backoff * (2 ** attempt))
+            except ValueError:
+                delay = min(a.max_backoff, a.backoff * (2 ** attempt))
+            print(json.dumps({"event":"provider_retry","status":exc.code,"attempt":attempt+1,"delay_seconds":delay}), file=sys.stderr)
+            time.sleep(delay)
+        except (urllib.error.URLError, TimeoutError) as exc:
+            if attempt + 1 >= a.max_attempts:
+                raise
+            delay = min(a.max_backoff, a.backoff * (2 ** attempt))
+            print(json.dumps({"event":"provider_retry","error_type":type(exc).__name__,"attempt":attempt+1,"delay_seconds":delay}), file=sys.stderr)
+            time.sleep(delay)
     records = value_at(payload, a.records_path) if a.records_path else payload
     if not isinstance(records, list):
         raise ValueError("records-path must resolve to a JSON array")
@@ -175,6 +231,9 @@ def main():
     q.add_argument("--match-map", default="", help="Reviewed exact provider_event_id to internal MatchID crosswalk CSV")
     q.add_argument("--output", required=True)
     q.add_argument("--timeout", type=int, default=20)
+    q.add_argument("--max-attempts", type=int, default=3)
+    q.add_argument("--backoff", type=float, default=1.0)
+    q.add_argument("--max-backoff", type=float, default=8.0)
     q.set_defaults(fn=api_command)
     q = s.add_parser("csv")
     q.add_argument("--input", required=True)
