@@ -26,7 +26,7 @@ LEAGUE_TO_CODE = {
     "netherlands eredivisie":"N1", "eredivisie":"N1", "holland eredivisie":"N1",
     "portugal liga portugal":"P1", "primeira liga":"P1", "liga portugal":"P1",
     "belgium pro league":"B1", "belgian pro league":"B1", "belcika pro league":"B1",
-    "turkiye super lig":"T1", "super lig":"T1", "turkey super lig":"T1",
+    "turkiye super lig":"T1", "super lig":"T1", "turkey super lig":"T1",\n    "turkiye 1 lig":"T2", "turkey 1 lig":"T2",
 }
 ALIASES = {
     "manchester united":"man united","man utd":"man united","manchester city":"man city",
@@ -73,7 +73,7 @@ def main():
     ap.add_argument("--odds-dir",type=Path,default=Path("."))
     ap.add_argument("--out",type=Path,default=Path("artifacts/xg18_odds"))
     a=ap.parse_args()
-    paths=sorted(p for p in a.odds_dir.glob("*.csv") if re.match(r"^(B1|D1|D2|E0|E2|F1|F2|I1|I2|N1|P1|SP1|SP2|T1)( \\(\\d+\\))?\\.csv$",p.name,re.I))
+    paths=sorted(p for p in a.odds_dir.glob("*.csv") if re.match(r"^(B1|D1|D2|E0|E2|F1|F2|I1|I2|N1|P1|SP1|SP2|T1)( \(\d+\))?\.csv$",p.name,re.I))
     if len(paths)!=70: raise RuntimeError(f"Expected exactly 70 odds CSVs; found {len(paths)}")
     records=[]; inventory=[]; odds_columns=set(); file_rows=0
     for p in paths:
