@@ -39,10 +39,10 @@ def utc_iso(value):
 
 def validate_normalized_row(row):
     """Strict common-schema validation; timestamps must be explicit UTC instants."""
-    required = set(FIELDS)
+    required = {"MatchID", "kickoff_utc", "captured_at", "home_odds", "draw_odds",
+                "away_odds", "source", "provider_id", "snapshot_kind",
+                "is_closing", "timestamp_semantics"}
     missing = [k for k in required if k not in row or row[k] is None or str(row[k]).strip() == ""]
-    # pinnacle_source_id is optional; preserve an empty value in the CSV schema.
-    missing = [k for k in missing if k != "pinnacle_source_id"]
     if missing:
         raise ValueError(f"normalized row missing required fields: {sorted(missing)}")
     if row["source"] not in ("pinnacle", "third_party"):
