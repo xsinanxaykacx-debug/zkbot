@@ -58,7 +58,7 @@ jobs:
             --trials 3
       - name: Report pre-registered 0.64 and 0.65 thresholds without selecting on test
         run: |
-          python scripts/compare_xg18_confirmation_thresholds.py \
+          python scripts/compare_xg18_final_thresholds.py \
             --predictions reports/final/xg18_v3_validation_predictions.csv \
             --output reports/final/final_thresholds_64_65.json \
             --bootstrap 30000
