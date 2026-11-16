@@ -1,0 +1,136 @@
+#!/usr/bin/env python3
+"""Provider-neutral odds ingestion for XG18 shadow. No provider is trusted by default."""
+import argparse
+import csv
+import json
+import os
+import sys
+import urllib.error
+import urllib.request
+from datetime import datetime, timezone
+from pathlib import Path
+
+FIELDS = [
+    "MatchID", "kickoff_utc", "captured_at", "home_odds", "draw_odds",
+    "away_odds", "source", "provider_id", "pinnacle_source_id",
+    "snapshot_kind", "is_closing",
+]
+
+def value_at(obj, path):
+    cur = obj
+    for part in path.split("."):
+        if isinstance(cur, list):
+            cur = cur[int(part)]
+        else:
+            cur = cur[part]
+    return cur
+
+def utc_iso(value):
+    from datetime import datetime
+    v = str(value).strip()
+    if not v:
+        raise ValueError("empty timestamp")
+    d = datetime.fromisoformat(v.replace("Z", "+00:00"))
+    if d.tzinfo is None:
+        raise ValueError("timestamps must include timezone; naive local time is rejected")
+    return d.astimezone(timezone.utc).isoformat().replace("+00:00", "Z")
+
+def normalize(item, mapping, provider_id, source):
+    row = {}
+    for field in ("MatchID", "kickoff_utc", "captured_at", "home_odds", "draw_odds", "away_odds"):
+        row[field] = value_at(item, mapping[field])
+    row["MatchID"] = str(row["MatchID"]).strip()
+    if not row["MatchID"]:
+        raise ValueError("empty MatchID")
+    row["kickoff_utc"] = utc_iso(row["kickoff_utc"])
+    row["captured_at"] = utc_iso(row["captured_at"])
+    for field in ("home_odds", "draw_odds", "away_odds"):
+        row[field] = float(row[field])
+        if not (row[field] > 1 and row[field] < float("inf")):
+            raise ValueError(f"{field} must be finite decimal odds > 1")
+    row["source"] = source
+    row["provider_id"] = provider_id
+    p = mapping.get("pinnacle_source_id")
+    row["pinnacle_source_id"] = str(value_at(item, p)) if p else ""
+    k = mapping.get("snapshot_kind")
+    row["snapshot_kind"] = str(value_at(item, k)) if k else "live_snapshot"
+    c = mapping.get("is_closing")
+    row["is_closing"] = str(value_at(item, c)).lower() in ("true", "1", "yes") if c else False
+    return row
+
+def write_rows(rows, output):
+    if not rows:
+        raise ValueError("API/CSV returned zero odds records")
+    seen = set()
+    with Path(output).open("w", newline="", encoding="utf-8") as f:
+        w = csv.DictWriter(f, fieldnames=FIELDS)
+        w.writeheader()
+        for row in rows:
+            key = (row["MatchID"], row["captured_at"], row["provider_id"])
+            if key in seen:
+                raise ValueError(f"duplicate snapshot: {key}")
+            seen.add(key)
+            w.writerow(row)
+
+def api_command(a):
+    token = os.environ.get(a.api_key_env) if a.api_key_env else None
+    headers = {"Accept": "application/json", "User-Agent": "XG18-shadow-research/1.0"}
+    if a.api_key_env:
+        if not token:
+            raise ValueError(f"environment variable {a.api_key_env} is not set")
+        headers[a.auth_header] = f"{a.auth_prefix}{token}"
+    req = urllib.request.Request(a.url, headers=headers, method="GET")
+    with urllib.request.urlopen(req, timeout=a.timeout) as response:
+        if response.status != 200:
+            raise ValueError(f"provider HTTP status {response.status}")
+        payload = json.loads(response.read().decode("utf-8"))
+    records = value_at(payload, a.records_path) if a.records_path else payload
+    if not isinstance(records, list):
+        raise ValueError("records-path must resolve to a JSON array")
+    mapping = json.loads(Path(a.mapping).read_text(encoding="utf-8"))
+    rows = [normalize(x, mapping, a.provider_id, a.source) for x in records]
+    write_rows(rows, a.output)
+    print(json.dumps({"status":"normalized_not_verified","provider_id":a.provider_id,
+                      "records":len(rows),"output":a.output,"credentials_logged":False}, indent=2))
+
+def csv_command(a):
+    mapping = json.loads(Path(a.mapping).read_text(encoding="utf-8"))
+    rows = []
+    with Path(a.input).open(newline="", encoding="utf-8-sig") as f:
+        for item in csv.DictReader(f):
+            rows.append(normalize(item, mapping, a.provider_id, a.source))
+    write_rows(rows, a.output)
+    print(json.dumps({"status":"normalized_not_verified","provider_id":a.provider_id,
+                      "records":len(rows),"output":a.output}, indent=2))
+
+def main():
+    p = argparse.ArgumentParser(description="Normalize provider odds into the common XG18 CSV schema")
+    s = p.add_subparsers(dest="command", required=True)
+    q = s.add_parser("api")
+    q.add_argument("--url", required=True)
+    q.add_argument("--provider-id", required=True)
+    q.add_argument("--source", choices=("pinnacle","third_party"), default="third_party")
+    q.add_argument("--api-key-env", default="")
+    q.add_argument("--auth-header", default="Authorization")
+    q.add_argument("--auth-prefix", default="Bearer ")
+    q.add_argument("--records-path", default="")
+    q.add_argument("--mapping", required=True, help="JSON field-path mapping; no secrets")
+    q.add_argument("--output", required=True)
+    q.add_argument("--timeout", type=int, default=20)
+    q.set_defaults(fn=api_command)
+    q = s.add_parser("csv")
+    q.add_argument("--input", required=True)
+    q.add_argument("--provider-id", required=True)
+    q.add_argument("--source", choices=("pinnacle","third_party"), default="third_party")
+    q.add_argument("--mapping", required=True)
+    q.add_argument("--output", required=True)
+    q.set_defaults(fn=csv_command)
+    a = p.parse_args()
+    try:
+        a.fn(a)
+    except (KeyError, IndexError, ValueError, OSError, urllib.error.URLError, json.JSONDecodeError) as e:
+        print(f"ERROR: {e}", file=sys.stderr)
+        raise SystemExit(2)
+
+if __name__ == "__main__":
+    main()
