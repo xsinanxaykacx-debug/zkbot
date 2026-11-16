@@ -1,0 +1,20 @@
+MatchID,Date,CompetitionType,HomeTeam,AwayTeam,FTHG,FTAG,OddsStatus,Note
+4167256,2023-05-12,League One play-off semi-final leg 1,Peterborough United,Sheffield Wednesday,4,0,missing,Outside regular-season E2 odds archive
+4167258,2023-05-13,League One play-off semi-final leg 1,Bolton Wanderers,Barnsley,1,1,missing,Outside regular-season E2 odds archive
+4167257,2023-05-18,League One play-off semi-final leg 2,Sheffield Wednesday,Peterborough United,5,1,missing,Outside regular-season E2 odds archive
+4167259,2023-05-19,League One play-off semi-final leg 2,Barnsley,Bolton Wanderers,1,0,missing,Outside regular-season E2 odds archive
+4167261,2023-05-29,League One play-off final,Barnsley,Sheffield Wednesday,0,1,missing,Outside regular-season E2 odds archive; after extra time
+4470448,2024-05-03,League One play-off semi-final leg 1,Barnsley,Bolton Wanderers,1,3,missing,Outside regular-season E2 odds archive
+4470446,2024-05-04,League One play-off semi-final leg 1,Oxford United,Peterborough United,1,0,missing,Outside regular-season E2 odds archive
+4470445,2024-05-07,League One play-off semi-final leg 2,Bolton Wanderers,Barnsley,2,3,missing,Outside regular-season E2 odds archive
+4470447,2024-05-08,League One play-off semi-final leg 2,Peterborough United,Oxford United,1,1,missing,Outside regular-season E2 odds archive
+4470459,2024-05-18,League One play-off final,Bolton Wanderers,Oxford United,0,2,missing,Outside regular-season E2 odds archive
+4783323,2025-05-10,League One play-off semi-final leg 1,Leyton Orient,Stockport County,2,2,missing,Outside regular-season E2 odds archive
+4783324,2025-05-11,League One play-off semi-final leg 1,Wycombe Wanderers,Charlton Athletic,0,0,missing,Outside regular-season E2 odds archive
+4783325,2025-05-14,League One play-off semi-final leg 2,Stockport County,Leyton Orient,1,1,missing,Outside regular-season E2 odds archive; Leyton Orient advanced on penalties
+4783326,2025-05-15,League One play-off semi-final leg 2,Charlton Athletic,Wycombe Wanderers,1,0,missing,Outside regular-season E2 odds archive
+4785696,2025-05-25,League One play-off final,Charlton Athletic,Leyton Orient,1,0,missing,Outside regular-season E2 odds archive
+4203250,2024-01-13,Abandoned fixture,Reading,Port Vale,0,0,excluded,Abandoned after 16 minutes; replayed on 2024-02-20 as MatchID 4417601
+4203025,2024-02-06,Abandoned fixture,Cambridge United,Bolton Wanderers,0,0,excluded,Abandoned after 9 minutes; replayed on 2024-02-20 as MatchID 4421571
+4417601,2024-02-20,Regular-season replay,Reading,Port Vale,2,0,matched,E2 odds row present
+4421571,2024-02-20,Regular-season replay,Cambridge United,Bolton Wanderers,1,2,matched,E2 odds row present
