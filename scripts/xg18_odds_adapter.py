@@ -81,7 +81,17 @@ def api_command(a):
         if not token:
             raise ValueError(f"environment variable {a.api_key_env} is not set")
         headers[a.auth_header] = f"{a.auth_prefix}{token}"
-    req = urllib.request.Request(a.url, headers=headers, method="GET")
+    body = None
+    if a.body_json:
+        raw = json.loads(Path(a.body_json).read_text(encoding="utf-8"))
+        if a.body_format == "form":
+            from urllib.parse import urlencode
+            body = urlencode(raw, doseq=True).encode("utf-8")
+            headers["Content-Type"] = "application/x-www-form-urlencoded"
+        else:
+            body = json.dumps(raw).encode("utf-8")
+            headers["Content-Type"] = "application/json"
+    req = urllib.request.Request(a.url, data=body, headers=headers, method=a.method)
     with urllib.request.urlopen(req, timeout=a.timeout) as response:
         if response.status != 200:
             raise ValueError(f"provider HTTP status {response.status}")
@@ -114,7 +124,7 @@ def main():
     q.add_argument("--source", choices=("pinnacle","third_party"), default="third_party")
     q.add_argument("--api-key-env", default="")
     q.add_argument("--auth-header", default="Authorization")
-    q.add_argument("--auth-prefix", default="Bearer ")
+    q.add_argument("--auth-prefix", default="Bearer ")\n    q.add_argument("--method", choices=("GET", "POST"), default="GET")\n    q.add_argument("--body-json", default="", help="Optional JSON file containing POST body fields")\n    q.add_argument("--body-format", choices=("json", "form"), default="json")
     q.add_argument("--records-path", default="")
     q.add_argument("--mapping", required=True, help="JSON field-path mapping; no secrets")
     q.add_argument("--output", required=True)
