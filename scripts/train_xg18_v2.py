@@ -87,7 +87,7 @@ def main():
     cp=np.vstack(op);cy=np.concatenate(oy);cal=minimize_scalar(lambda t:log_loss(cy,temp_probs(cp,t),labels=[0,1,2]),bounds=(.5,2.5),method="bounded")
     temperature=float(cal.x);final=pipeline(best);final.fit(Xt,y);probs=temp_probs(final.predict_proba(Xv),temperature)
     report={"model":"XG18 v2 XGBoost + pre-match rolling form/Elo/H2H","training_rows":len(tr),"validation_rows":len(va),
-      "validation_outcomes_used_for_tuning_or_calibration":False,"feature_policy":"past completed matches only; UTC-day batch before result updates; current-match stats excluded",
+      "validation_outcomes_used_for_tuning_or_calibration":False,"validation_state_policy":"Earlier validation-day results update rolling state for later dates only; same-day results are never visible to same-day fixtures.","feature_policy":"past completed matches only; UTC-day batch before result updates; current-match stats excluded",
       "feature_count":len(FEATURE_COLUMNS),"categorical_features":CATS,"optuna_trials":a.trials,"best_params":best,
       "internal_chronological_cv_logloss":study.best_value,"temperature_from_training_oof_only":temperature,"validation":metrics(probs,yv)}
     joblib.dump(final,a.outdir/"xg18_v2.joblib",compress=3)
