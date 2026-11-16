@@ -1,0 +1,11 @@
+{
+  "MatchID": "event.id",
+  "kickoff_utc": "event.startTime",
+  "captured_at": "updated_at",
+  "home_odds": "markets.1x2.home",
+  "draw_odds": "markets.1x2.draw",
+  "away_odds": "markets.1x2.away",
+  "pinnacle_source_id": "event.pinnacleId",
+  "snapshot_kind": "snapshot_type",
+  "is_closing": "is_closing"
+}
