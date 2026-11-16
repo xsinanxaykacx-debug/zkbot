@@ -37,6 +37,7 @@ def test_league_one_odds_aliases():
         "Bradford City": "bradford",
         "Doncaster Rovers": "doncaster",
         "Luton Town": "luton",
+        "Mansfield Town": "mansfield",
     }
     for source, expected in cases.items():
         assert MODULE.team(source) == expected
