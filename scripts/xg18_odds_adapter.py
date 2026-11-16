@@ -14,7 +14,7 @@ from pathlib import Path
 FIELDS = [
     "MatchID", "kickoff_utc", "captured_at", "home_odds", "draw_odds",
     "away_odds", "source", "provider_id", "pinnacle_source_id",
-    "snapshot_kind", "is_closing", "provider_league", "provider_home_team",
+    "provider_event_id", "snapshot_kind", "is_closing", "provider_league", "provider_home_team",
     "provider_away_team", "timestamp_semantics",
 ]
 
@@ -93,6 +93,8 @@ def normalize(item, mapping, provider_id, source):
         raise ValueError("Only provider_id=pinnacle_official may use source=pinnacle")
     row["source"] = source
     row["provider_id"] = provider_id
+    pe = mapping.get("provider_event_id")
+    row["provider_event_id"] = str(value_at(item, pe)) if pe else ""
     p = mapping.get("pinnacle_source_id")
     row["pinnacle_source_id"] = str(value_at(item, p)) if p else ""
     k = mapping.get("snapshot_kind")
@@ -119,7 +121,7 @@ def apply_match_map(rows, path):
         mapping[key] = target
         targets.add(target)
     for row in rows:
-        key = str(row.get("pinnacle_source_id", "")).strip()
+        key = str(row.get("provider_event_id", "")).strip()
         if key not in mapping:
             raise ValueError(f"No exact reviewed match-map entry for provider event {key}")
         row["MatchID"] = mapping[key]
