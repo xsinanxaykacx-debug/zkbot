@@ -69,6 +69,30 @@ def normalize(item, mapping, provider_id, source):
     row["is_closing"] = str(value_at(item, c)).lower() in ("true", "1", "yes") if c else False
     return row
 
+def apply_match_map(rows, path):
+    if not path:
+        return rows
+    with Path(path).open(newline="", encoding="utf-8-sig") as f:
+        records = list(csv.DictReader(f))
+    required = {"provider_event_id", "MatchID"}
+    if not records or not required.issubset(records[0]):
+        raise ValueError("match-map CSV requires provider_event_id,MatchID")
+    mapping = {}
+    targets = set()
+    for r in records:
+        key = str(r["provider_event_id"]).strip()
+        target = str(r["MatchID"]).strip()
+        if not key or not target or key in mapping or target in targets:
+            raise ValueError("match-map must be non-empty and one-to-one")
+        mapping[key] = target
+        targets.add(target)
+    for row in rows:
+        key = str(row.get("pinnacle_source_id", "")).strip()
+        if key not in mapping:
+            raise ValueError(f"No exact reviewed match-map entry for provider event {key}")
+        row["MatchID"] = mapping[key]
+    return rows
+
 def write_rows(rows, output):
     if not rows:
         raise ValueError("API/CSV returned zero odds records")
@@ -135,7 +159,7 @@ def main():
     q.add_argument("--auth-header", default="Authorization")
     q.add_argument("--auth-prefix", default="Bearer ")\n    q.add_argument("--method", choices=("GET", "POST"), default="GET")\n    q.add_argument("--body-json", default="", help="Optional JSON file containing POST body fields")\n    q.add_argument("--body-format", choices=("json", "form"), default="json")
     q.add_argument("--records-path", default="")
-    q.add_argument("--mapping", required=True, help="JSON field-path mapping; no secrets")
+    q.add_argument("--mapping", required=True, help="JSON field-path mapping; no secrets")\n    q.add_argument("--match-map", default="", help="Reviewed exact provider_event_id to internal MatchID crosswalk CSV")
     q.add_argument("--output", required=True)
     q.add_argument("--timeout", type=int, default=20)
     q.set_defaults(fn=api_command)
