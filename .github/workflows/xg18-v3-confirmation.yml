@@ -5,6 +5,7 @@ on:
     paths:
       - "scripts/train_xg18_v3.py"
       - "scripts/split_xg18_confirmation.py"
+      - "scripts/quarantine_abandoned_xg18_fixtures.py"
       - "scripts/compare_xg18_confirmation_thresholds.py"
       - "scripts/xg18_v3_features.py"
       - "scripts/xg18_v2_features.py"
@@ -39,9 +40,12 @@ jobs:
       - name: Attach odds to official partitions
         run: |
           python scripts/prepare_xg18_odds_splits.py --merged artifacts/xg18_odds/xg18_with_all_league_odds.csv --train data/xg18_train.csv --validation data/xg18_val.csv --outdir data
-      - name: Carve a forward confirmation set from official training rows only
+      - name: Quarantine abandoned 0-0 fixtures from model training
         run: |
-          python scripts/split_xg18_confirmation.py --input data/xg18_train_odds.csv --train-out data/confirmation_train.csv --confirm-out data/confirmation_holdout.csv --report reports/confirmation_split.json --train-fraction 0.80
+          python scripts/quarantine_abandoned_xg18_fixtures.py --input data/xg18_train_odds.csv --output data/xg18_train_odds_clean.csv --report reports/abandoned_fixture_quarantine.json
+      - name: Carve a forward confirmation set from cleaned official training rows only
+        run: |
+          python scripts/split_xg18_confirmation.py --input data/xg18_train_odds_clean.csv --train-out data/confirmation_train.csv --confirm-out data/confirmation_holdout.csv --report reports/confirmation_split.json --train-fraction 0.80
       - name: Verify feature leakage tests
         run: PYTHONPATH=scripts python -m pytest -q tests/test_prematch_features.py tests/test_v3_features.py tests/test_v3_market_features.py
       - name: Fit on earlier rows and score untouched confirmation rows
@@ -55,6 +59,7 @@ jobs:
           name: xg18-v3-independent-threshold-confirmation
           path: |
             artifacts/xg18_odds/merge_report.json
+            reports/abandoned_fixture_quarantine.json
             reports/confirmation_split.json
             reports/xg18_v3_report.json
             reports/xg18_v3_validation_predictions.csv
