@@ -38,3 +38,6 @@ The confirmation workflow quarantines only the two abandoned records. The 15 com
 - No changes to `main` or production.
 - Official final-test rows are never read.
 - Do not import CheckBestOdds or OddsPortal values into the current odds schema until licensing, odds definition, bookmaker identity, and match coverage are verified.
+
+### Licensed custom-data path: Footiqo
+Footiqo's premium pre-match odds collection explicitly permits purchased datasets for personal research, statistical analysis, backtesting and predictive modelling, including ML; it also supports custom competition/season/bookmaker requests. Its standard odds collection currently lists eight competitions and does not list Turkey TFF 1. Lig. Therefore the practical licensed route is a custom quote/request for TFF 1. Lig seasons 2022/23–2025/26, with 1X2 and O/U 2.5 closing prices and bookmaker/timestamp fields. No order has been placed and no data have been received. Contact listed by the provider: support@footiqo.com.
