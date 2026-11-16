@@ -22,7 +22,7 @@ def _market_features(matches: pd.DataFrame) -> pd.DataFrame:
         out[f"market_{prefix}_p_draw"]=implied[:,1]
         out[f"market_{prefix}_p_away"]=implied[:,2]
         out[f"market_{prefix}_1x2_overround"]=margin
-        out[f"market_{label}_present"]=valid.astype(float)
+        out[f"market_{label}"]=valid.astype(float)
     def add_ou(prefix, cols, label):
         odds=raw.reindex(columns=cols).apply(pd.to_numeric,errors="coerce").to_numpy(dtype=float)
         valid=np.isfinite(odds).all(axis=1)&(odds>1.0).all(axis=1)
