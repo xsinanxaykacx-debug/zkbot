@@ -1,0 +1,71 @@
+name: XG18 bot build and validation
+
+on:
+  push:
+    branches:
+      - work/football-prediction-bot-v1
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  inspect-and-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: work/football-prediction-bot-v1
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Assemble frozen source in documented order
+        shell: bash
+        run: |
+          cat research/xg18-frozen-source.zip.part00 research/xg18-frozen-source.zip.part01 research/xg18-frozen-source.zip.part02 research/xg18-frozen-source.zip.part03 research/xg18-frozen-source.zip.part04 research/xg18-frozen-source.zip.part05 research/xg18-frozen-source.zip.part06 research/xg18-frozen-source.zip.part06b research/xg18-frozen-source.zip.part07 research/xg18-frozen-source.zip.part08 research/xg18-frozen-source.zip.part09 > /tmp/xg18-frozen-source.zip
+          python - <<'PY'
+          import hashlib, zipfile, pathlib
+          p=pathlib.Path('/tmp/xg18-frozen-source.zip')
+          print('archive_bytes', p.stat().st_size)
+          print('archive_sha256', hashlib.sha256(p.read_bytes()).hexdigest())
+          z=zipfile.ZipFile(p)
+          print('archive_members', z.namelist())
+          bad=z.testzip()
+          print('zip_crc_test', 'PASS' if bad is None else f'FAIL:{bad}')
+          if bad is not None:
+              raise SystemExit('Frozen source archive failed CRC validation')
+          z.extractall('frozen_src')
+          PY
+      - name: Inspect frozen module API
+        shell: bash
+        run: |
+          python - <<'PY'
+          import ast, pathlib, hashlib
+          p=pathlib.Path('frozen_src/xg18_frozen_model.py')
+          s=p.read_text(encoding='utf-8')
+          print('module_sha256',hashlib.sha256(p.read_bytes()).hexdigest())
+          t=ast.parse(s)
+          for n in t.body:
+              if isinstance(n,(ast.FunctionDef,ast.AsyncFunctionDef,ast.ClassDef)):
+                  print(type(n).__name__, n.name, 'line', n.lineno)
+          print('--- README ---')
+          print(pathlib.Path('frozen_src/README_XG18_FREEZE.md').read_text(encoding='utf-8'))
+          PY
+      - name: Download permitted non-test data
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh run download 43848824932 --repo ${{ github.repository }} --name zk2-xg18-split-v1-non-test --dir data
+          ls -l data
+          python - <<'PY'
+          import pathlib, pandas as pd
+          p=pathlib.Path('data/xg18_val.csv')
+          if not p.exists():
+              raise SystemExit('xg18_val.csv not found in permitted non-test artifact')
+          d=pd.read_csv(p)
+          print('validation_rows',len(d))
+          print('columns',list(d.columns))
+          print(d.head(3).to_string(index=False))
+          PY
