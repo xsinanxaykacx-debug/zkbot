@@ -1,1 +1,1 @@
-MatchID,kickoff_utc,captured_at,home_odds,draw_odds,away_odds,source,provider_id,pinnacle_source_id,snapshot_kind,is_closing,provider_league,provider_home_team,provider_away_team,timestamp_semantics
+MatchID,kickoff_utc,captured_at,home_odds,draw_odds,away_odds,source,provider_id,provider_event_id,pinnacle_source_id,snapshot_kind,is_closing,provider_league,provider_home_team,provider_away_team,timestamp_semantics
