@@ -102,6 +102,11 @@ def predict(a):
     for e in events: append(a.ledger,e)
     print(json.dumps({"status":"ok","predictions_written":len(events),"model_version":VERSION,"betting_enabled":False},indent=2))
 
+def identity_key(value):
+    import unicodedata
+    value=unicodedata.normalize("NFKD",str(value)).encode("ascii","ignore").decode("ascii").casefold()
+    return "".join(ch for ch in value if ch.isalnum())
+
 def add_odds(a):
     rows=pd.read_csv(a.input,keep_default_na=False)
     need={"MatchID","captured_at","home_odds","draw_odds","away_odds","source"}
@@ -119,6 +124,9 @@ def add_odds(a):
         pinnacle_id=str(r.get("pinnacle_source_id") or "").strip() or None
         t=utc(r["captured_at"]); kickoff=utc(r.get("kickoff_utc") or preds[mid]["kickoff_utc"])
         if kickoff!=utc(preds[mid]["kickoff_utc"]): raise ValueError("CSV kickoff_utc does not match the immutable fixture prediction")
+        for field, expected in (("provider_league",preds[mid]["league"]),("provider_home_team",preds[mid]["home_team"]),("provider_away_team",preds[mid]["away_team"])):
+            actual=str(r.get(field) or "").strip()
+            if actual and identity_key(actual)!=identity_key(expected): raise ValueError(f"Provider fixture mismatch for {mid}: {field}={actual!r}, expected={expected!r}; manual review required")
         if t>=kickoff: raise ValueError("Odds timestamp must precede kickoff")
         o=np.array([float(r[k]) for k in ("home_odds","draw_odds","away_odds")])
         if not np.isfinite(o).all() or (o<=1).any(): raise ValueError("Decimal odds must be finite and >1")
