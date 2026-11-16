@@ -1,0 +1,75 @@
+name: XG18 V3 one-time final test evaluation
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  final-evaluation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+      - name: Install model dependencies
+        run: python -m pip install -r requirements-xg18-v3.txt pytest
+      - name: Download official non-test partitions
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh run download 43848824932 --repo ${{ github.repository }} --name zk2-xg18-split-v1-non-test --dir data/non-test
+          test -s data/non-test/xg18_train.csv
+          test -s data/non-test/xg18_val.csv
+      - name: Download sealed final-test partition for this one-time evaluation
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh run download 43848824932 --repo ${{ github.repository }} --name zk2-xg18-split-v1-SEALED-TEST --dir data/final-test
+          test -s data/final-test/xg18_test.csv
+      - name: Merge odds from the existing 70 CSV files only
+        run: |
+          python scripts/merge_xg18_all_league_odds.py --xg xg18.csv --odds-dir . \
+            --include-csv data/non-test/xg18_train.csv \
+            --include-csv data/non-test/xg18_val.csv \
+            --include-csv data/final-test/xg18_test.csv \
+            --out artifacts/xg18_final_odds
+      - name: Prepare frozen fit data and final-test data
+        run: |
+          python scripts/prepare_xg18_final_eval.py \
+            --train data/non-test/xg18_train.csv \
+            --validation data/non-test/xg18_val.csv \
+            --test data/final-test/xg18_test.csv \
+            --merged-odds artifacts/xg18_final_odds/xg18_with_all_league_odds.csv \
+            --outdir data/final-eval
+      - name: Verify feature leakage controls
+        run: PYTHONPATH=scripts python -m pytest -q tests/test_prematch_features.py tests/test_v3_features.py tests/test_v3_market_features.py
+      - name: Fit only on train+validation and evaluate final test once
+        run: |
+          python scripts/train_xg18_v3.py \
+            --train data/final-eval/xg18_final_fit_train.csv \
+            --validation data/final-eval/xg18_final_test.csv \
+            --outdir reports/final \
+            --trials 3
+      - name: Report pre-registered 0.64 and 0.65 thresholds without selecting on test
+        run: |
+          python scripts/compare_xg18_confirmation_thresholds.py \
+            --predictions reports/final/xg18_v3_validation_predictions.csv \
+            --output reports/final/final_thresholds_64_65.json \
+            --bootstrap 30000
+      - uses: actions/upload-artifact@v4
+        with:
+          name: xg18-v3-one-time-final-test-report
+          path: |
+            data/final-eval/final_eval_input_manifest.json
+            artifacts/xg18_final_odds/merge_report.json
+            reports/final/xg18_v3_report.json
+            reports/final/xg18_v3_validation_predictions.csv
+            reports/final/final_thresholds_64_65.json
+          if-no-files-found: error
+          retention-days: 90
