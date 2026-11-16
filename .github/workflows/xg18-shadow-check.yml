@@ -1,0 +1,24 @@
+name: XG18 Shadow Code Check
+
+on:
+  push:
+    branches:
+      - research/xg18-shadow-production
+    paths:
+      - "scripts/xg18_shadow.py"
+      - ".github/workflows/xg18-shadow-check.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  syntax:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Compile shadow runner (no data access)
+        run: python -m py_compile scripts/xg18_shadow.py
