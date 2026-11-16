@@ -119,7 +119,7 @@ class OddsAdapterTests(unittest.TestCase):
             self.assertEqual(result[0]["MatchID"], "match-a")
 
     def test_match_map_rejects_duplicate_provider_ids(self):
-        rows = [{"pinnacle_source_id": "event-a"}]
+        rows = [{"provider_event_id": "event-a"}]
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / "map.csv"
             path.write_text(
