@@ -25,12 +25,23 @@ jobs:
           python-version: "3.12"
       - name: Install dependency
         run: python -m pip install --disable-pip-version-check pandas
-      - name: Build and validate split manifest
+      - name: Build and validate split
         run: python scripts/build_xg18_split.py
-      - name: Upload split manifest and row assignments
+      - name: Publish train, validation, quarantine and manifest
         uses: actions/upload-artifact@v4
         with:
-          name: zk2-xg18-chronological-split-v1
-          path: split-results/
+          name: zk2-xg18-split-v1-non-test
+          path: |
+            split-results/xg18_train.csv
+            split-results/xg18_val.csv
+            split-results/xg18_quarantine.csv
+            split-results/xg18_split_manifest.json
+          if-no-files-found: error
+          retention-days: 90
+      - name: Publish sealed test partition separately
+        uses: actions/upload-artifact@v4
+        with:
+          name: zk2-xg18-split-v1-SEALED-TEST
+          path: split-results/xg18_test.csv
           if-no-files-found: error
           retention-days: 90
