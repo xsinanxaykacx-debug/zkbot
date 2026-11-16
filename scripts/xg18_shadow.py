@@ -196,6 +196,7 @@ def report(a):
         eligible=[]
         for snap in ev:
             if snap.get("event_type")!="odds_snapshot" or snap.get("match_id")!=mid: continue
+            if snap.get("source")=="pinnacle" and snap.get("provider_id")=="pinnacle_official" and snap.get("is_closing"): continue
             captured=utc(snap["captured_at"]); age=(kickoff-captured).total_seconds()
             if 0 <= age <= 120: eligible.append((captured,snap))
         if eligible:
