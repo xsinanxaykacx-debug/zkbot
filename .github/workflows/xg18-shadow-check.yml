@@ -22,5 +22,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.13"
-      - name: Compile shadow runner (no data access)
-        run: python -m py_compile scripts/xg18_shadow.py
+      - name: Compile shadow scripts (no data access)
+        run: python -m py_compile scripts/xg18_shadow.py scripts/xg18_odds_adapter.py
+      - name: Run offline adapter tests
+        run: python -m unittest discover -s tests -p "test_xg18_odds_adapter.py"
