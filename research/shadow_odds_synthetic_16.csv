@@ -1,17 +1,17 @@
 MatchID,kickoff_utc,captured_at,home_odds,draw_odds,away_odds,source,provider_id,provider_event_id,pinnacle_source_id,snapshot_kind,is_closing,provider_league,provider_home_team,provider_away_team,timestamp_semantics
-SYN-001,2026-12-20T15:00:00Z,2026-12-20T15:58:30Z,2.05,3.4,3.7,third_party,synthetic_fixture,SYN-EVT-001,,prematch_snapshot,false,ENG-Premier-League,Arsenal,Chelsea,synthetic_fixture_only
-SYN-002,2026-12-20T17:00:00Z,2026-12-20T17:58:30Z,1.95,3.55,3.9,third_party,synthetic_fixture,SYN-EVT-002,,prematch_snapshot,false,ENG-Premier-League,Liverpool,Tottenham,synthetic_fixture_only
-SYN-003,2026-12-20T19:00:00Z,2026-12-20T19:58:30Z,1.48,4.5,6.8,third_party,synthetic_fixture,SYN-EVT-003,,prematch_snapshot,false,ESP-LaLiga,Real Madrid,Sevilla,synthetic_fixture_only
-SYN-004,2026-12-20T21:00:00Z,2026-12-20T21:58:30Z,1.72,3.8,4.9,third_party,synthetic_fixture,SYN-EVT-004,,prematch_snapshot,false,ESP-LaLiga,Barcelona,Valencia,synthetic_fixture_only
-SYN-005,2026-12-21T15:00:00Z,2026-12-21T15:58:30Z,2.05,3.4,3.7,third_party,synthetic_fixture,SYN-EVT-005,,prematch_snapshot,false,ITA-Serie-A,Inter,Milan,synthetic_fixture_only
-SYN-006,2026-12-21T17:00:00Z,2026-12-21T17:58:30Z,1.95,3.55,3.9,third_party,synthetic_fixture,SYN-EVT-006,,prematch_snapshot,false,ITA-Serie-A,Juventus,Roma,synthetic_fixture_only
-SYN-007,2026-12-21T19:00:00Z,2026-12-21T19:58:30Z,1.48,4.5,6.8,third_party,synthetic_fixture,SYN-EVT-007,,prematch_snapshot,false,GER-Bundesliga,Bayern Munich,Dortmund,synthetic_fixture_only
-SYN-008,2026-12-21T21:00:00Z,2026-12-21T21:58:30Z,1.72,3.8,4.9,third_party,synthetic_fixture,SYN-EVT-008,,prematch_snapshot,false,GER-Bundesliga,Leverkusen,Leipzig,synthetic_fixture_only
-SYN-009,2026-12-22T15:00:00Z,2026-12-22T15:58:30Z,2.05,3.4,3.7,third_party,synthetic_fixture,SYN-EVT-009,,prematch_snapshot,false,FRA-Ligue-1,PSG,Lyon,synthetic_fixture_only
-SYN-010,2026-12-22T17:00:00Z,2026-12-22T17:58:30Z,1.95,3.55,3.9,third_party,synthetic_fixture,SYN-EVT-010,,prematch_snapshot,false,FRA-Ligue-1,Marseille,Monaco,synthetic_fixture_only
-SYN-011,2026-12-22T19:00:00Z,2026-12-22T19:58:30Z,1.48,4.5,6.8,third_party,synthetic_fixture,SYN-EVT-011,,prematch_snapshot,false,NED-Eredivisie,Ajax,PSV,synthetic_fixture_only
-SYN-012,2026-12-22T21:00:00Z,2026-12-22T21:58:30Z,1.72,3.8,4.9,third_party,synthetic_fixture,SYN-EVT-012,,prematch_snapshot,false,NED-Eredivisie,Feyenoord,AZ Alkmaar,synthetic_fixture_only
-SYN-013,2026-12-23T15:00:00Z,2026-12-23T15:58:30Z,2.05,3.4,3.7,third_party,synthetic_fixture,SYN-EVT-013,,prematch_snapshot,false,POR-Primeira-Liga,Benfica,Porto,synthetic_fixture_only
-SYN-014,2026-12-23T17:00:00Z,2026-12-23T17:58:30Z,1.95,3.55,3.9,third_party,synthetic_fixture,SYN-EVT-014,,prematch_snapshot,false,POR-Primeira-Liga,Sporting CP,Braga,synthetic_fixture_only
-SYN-015,2026-12-23T19:00:00Z,2026-12-23T19:58:30Z,1.48,4.5,6.8,third_party,synthetic_fixture,SYN-EVT-015,,prematch_snapshot,false,TUR-Super-Lig,Galatasaray,Fenerbahce,synthetic_fixture_only
-SYN-016,2026-12-23T21:00:00Z,2026-12-23T21:58:30Z,1.72,3.8,4.9,third_party,synthetic_fixture,SYN-EVT-016,,prematch_snapshot,false,TUR-Super-Lig,Besiktas,Trabzonspor,synthetic_fixture_only
+SYN-001,2026-12-20T15:00:00Z,2026-12-20T14:58:30Z,2.05,3.4,3.7,third_party,synthetic_fixture,SYN-EVT-001,,prematch_snapshot,false,ENG-Premier-League,Arsenal,Chelsea,synthetic_fixture_only
+SYN-002,2026-12-20T17:00:00Z,2026-12-20T16:58:30Z,1.95,3.55,3.9,third_party,synthetic_fixture,SYN-EVT-002,,prematch_snapshot,false,ENG-Premier-League,Liverpool,Tottenham,synthetic_fixture_only
+SYN-003,2026-12-20T19:00:00Z,2026-12-20T18:58:30Z,1.48,4.5,6.8,third_party,synthetic_fixture,SYN-EVT-003,,prematch_snapshot,false,ESP-LaLiga,Real Madrid,Sevilla,synthetic_fixture_only
+SYN-004,2026-12-20T21:00:00Z,2026-12-20T20:58:30Z,1.72,3.8,4.9,third_party,synthetic_fixture,SYN-EVT-004,,prematch_snapshot,false,ESP-LaLiga,Barcelona,Valencia,synthetic_fixture_only
+SYN-005,2026-12-21T15:00:00Z,2026-12-21T14:58:30Z,2.05,3.4,3.7,third_party,synthetic_fixture,SYN-EVT-005,,prematch_snapshot,false,ITA-Serie-A,Inter,Milan,synthetic_fixture_only
+SYN-006,2026-12-21T17:00:00Z,2026-12-21T16:58:30Z,1.95,3.55,3.9,third_party,synthetic_fixture,SYN-EVT-006,,prematch_snapshot,false,ITA-Serie-A,Juventus,Roma,synthetic_fixture_only
+SYN-007,2026-12-21T19:00:00Z,2026-12-21T18:58:30Z,1.48,4.5,6.8,third_party,synthetic_fixture,SYN-EVT-007,,prematch_snapshot,false,GER-Bundesliga,Bayern Munich,Dortmund,synthetic_fixture_only
+SYN-008,2026-12-21T21:00:00Z,2026-12-21T20:58:30Z,1.72,3.8,4.9,third_party,synthetic_fixture,SYN-EVT-008,,prematch_snapshot,false,GER-Bundesliga,Leverkusen,Leipzig,synthetic_fixture_only
+SYN-009,2026-12-22T15:00:00Z,2026-12-22T14:58:30Z,2.05,3.4,3.7,third_party,synthetic_fixture,SYN-EVT-009,,prematch_snapshot,false,FRA-Ligue-1,PSG,Lyon,synthetic_fixture_only
+SYN-010,2026-12-22T17:00:00Z,2026-12-22T16:58:30Z,1.95,3.55,3.9,third_party,synthetic_fixture,SYN-EVT-010,,prematch_snapshot,false,FRA-Ligue-1,Marseille,Monaco,synthetic_fixture_only
+SYN-011,2026-12-22T19:00:00Z,2026-12-22T18:58:30Z,1.48,4.5,6.8,third_party,synthetic_fixture,SYN-EVT-011,,prematch_snapshot,false,NED-Eredivisie,Ajax,PSV,synthetic_fixture_only
+SYN-012,2026-12-22T21:00:00Z,2026-12-22T20:58:30Z,1.72,3.8,4.9,third_party,synthetic_fixture,SYN-EVT-012,,prematch_snapshot,false,NED-Eredivisie,Feyenoord,AZ Alkmaar,synthetic_fixture_only
+SYN-013,2026-12-23T15:00:00Z,2026-12-23T14:58:30Z,2.05,3.4,3.7,third_party,synthetic_fixture,SYN-EVT-013,,prematch_snapshot,false,POR-Primeira-Liga,Benfica,Porto,synthetic_fixture_only
+SYN-014,2026-12-23T17:00:00Z,2026-12-23T16:58:30Z,1.95,3.55,3.9,third_party,synthetic_fixture,SYN-EVT-014,,prematch_snapshot,false,POR-Primeira-Liga,Sporting CP,Braga,synthetic_fixture_only
+SYN-015,2026-12-23T19:00:00Z,2026-12-23T18:58:30Z,1.48,4.5,6.8,third_party,synthetic_fixture,SYN-EVT-015,,prematch_snapshot,false,TUR-Super-Lig,Galatasaray,Fenerbahce,synthetic_fixture_only
+SYN-016,2026-12-23T21:00:00Z,2026-12-23T20:58:30Z,1.72,3.8,4.9,third_party,synthetic_fixture,SYN-EVT-016,,prematch_snapshot,false,TUR-Super-Lig,Besiktas,Trabzonspor,synthetic_fixture_only
