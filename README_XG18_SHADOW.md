@@ -24,16 +24,16 @@ Install the pinned packages from `research/xg18-frozen-source/requirements-xg18-
 
 - `history.csv`: fixed 15,734 train+validation rows; columns include League, Date, HomeTeam, AwayTeam, FTHG, FTAG.
 - `fixtures.csv`: upcoming fixtures; columns MatchID, League, Date, HomeTeam, AwayTeam. MatchID must be stable and unique. Date must be UTC. Fixtures must be future-dated and after fixed history.
-- `odds.csv`: MatchID, kickoff_utc, captured_at, home_odds, draw_odds, away_odds, source, provider_id, pinnacle_source_id, snapshot_kind, is_closing. `source` is `pinnacle` only for the official Pinnacle API (`provider_id=pinnacle_official`); all independent services must use `source=third_party` and their own `provider_id` (for example `pinnapi` or `pinnodds`). `pinnacle_source_id` is optional and must never be fabricated. `captured_at` is the timestamp supplied by that provider, not necessarily Pinnacle event time. Decimal odds must be >1 and timestamps must precede kickoff. Only an official Pinnacle response may set `is_closing=true` for official closing metrics. Fair probabilities use proportional normalization of inverse odds.
+- `odds.csv`: MatchID, kickoff_utc, captured_at, home_odds, draw_odds, away_odds, source, provider_id, pinnacle_source_id, snapshot_kind, is_closing. `source` is `pinnacle` only for the official Pinnacle API (`provider_id=pinnacle_official`); all independent services must use `source=third_party` and their own `provider_id` (for example `pinnapi` or `pinnodds`). `pinnacle_source_id` is optional and must never be fabricated. `captured_at` is accompanied by `timestamp_semantics`: it may be a provider-supplied timestamp of unverified meaning or local ingestion time. Decimal odds must be >1 and timestamps must precede kickoff. Only an official Pinnacle response may set `is_closing=true` for official closing metrics. Fair probabilities use proportional normalization of inverse odds.
 - `results.csv`: MatchID, FTHG, FTAG, result_available_at. Add results only after they are actually available.
 
-Templates are in `research/shadow_*_template.csv`. An example configurable API field map is in `research/odds_api_mapping.example.json`; adapt it to the provider documentation before use.
+Templates are in `research/shadow_*_template.csv`. An example configurable API field map is in `research/odds_api_mapping.example.json`; the Pinnodds event map is `research/pinnodds_mapping.example.json`. Use `research/pinnodds_match_map.template.csv` to build a manually reviewed, exact provider-event-ID to internal MatchID crosswalk. The adapter will not fuzzy-match or guess fixture identity. Provider league/team names and kickoff are checked against the shadow prediction before a snapshot is accepted.
 
 ## Commands
 
 ```bash
 python scripts/xg18_shadow.py predict --history data/xg18_train_validation.csv --fixtures data/upcoming_fixtures.csv --ledger shadow/shadow_ledger.jsonl
-python scripts/xg18_odds_adapter.py api --url "https://pinnodds.com/kit/v1/prematch/fixtures?sport_id=1" --provider-id pinnodds --api-key-env PINNODDS_API_KEY --auth-header x-portal-apikey --auth-prefix "" --records-path events --mapping research/pinnodds_mapping.example.json --output data/normalized_odds.csv
+python scripts/xg18_odds_adapter.py api --url "https://pinnodds.com/kit/v1/prematch/fixtures?sport_id=1" --provider-id pinnodds --api-key-env PINNODDS_API_KEY --auth-header x-portal-apikey --auth-prefix "" --records-path events --mapping research/pinnodds_mapping.example.json --match-map research/pinnodds_match_map.csv --output data/normalized_odds.csv
 python scripts/xg18_shadow.py add-odds --input data/normalized_odds.csv --ledger shadow/shadow_ledger.jsonl
 python scripts/xg18_shadow.py settle --input data/settled_results.csv --ledger shadow/shadow_ledger.jsonl
 python scripts/xg18_shadow.py report --ledger shadow/shadow_ledger.jsonl --output reports/xg18_shadow_report.json
