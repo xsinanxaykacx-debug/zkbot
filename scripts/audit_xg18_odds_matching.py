@@ -137,9 +137,25 @@ def main() -> None:
             }
             for col in ODDS:
                 item[col] = z[col] if col in z.index else None
-            item["has_1x2"] = all(pd.notna(item.get(c)) for c in ("_odd_H", "_odd_D", "_odd_A"))
-            item["has_ou25"] = all(pd.notna(item.get(c)) for c in ("_odd_under25", "_odd_over25"))
+            one_x_two_groups = [
+                ("_odd_H", "_odd_D", "_odd_A"),
+                ("_odd_H_pinnacle_open", "_odd_D_pinnacle_open", "_odd_A_pinnacle_open"),
+                ("_odd_H_pinnacle_close", "_odd_D_pinnacle_close", "_odd_A_pinnacle_close"),
+                ("_market_average_home_1x2", "_market_average_draw_1x2", "_market_average_away_1x2"),
+            ]
+            ou_groups = [
+                ("_odd_under25", "_odd_over25"),
+                ("_odd_under25_pinnacle_open", "_odd_over25_pinnacle_open"),
+                ("_odd_under25_pinnacle_close", "_odd_over25_pinnacle_close"),
+                ("_market_average_under25", "_market_average_over25"),
+            ]
+            item["has_1x2"] = any(all(pd.notna(item.get(c)) for c in group) for group in one_x_two_groups)
+            item["has_ou25"] = any(all(pd.notna(item.get(c)) for c in group) for group in ou_groups)
             item["has_kg"] = all(pd.notna(item.get(c)) for c in ("_odd_kg_var", "_odd_kg_yok"))
+            item["odds_source"] = (
+                "DATA.csv" if all(pd.notna(item.get(c)) for c in ("_odd_H", "_odd_D", "_odd_A"))
+                else "EPL.xlsm/Pinnacle" if item["has_1x2"] else "none"
+            )
             rows.append(item)
         else:
             rows.append({
@@ -169,15 +185,25 @@ def main() -> None:
             "match_rate_pct": round(100 * counts["matched"] / n, 2) if n else 0.0,
         }
     zk_leagues = sorted(str(v) for v in zk["_league_canonical"].dropna().unique())
+    zk_teams_by_league = {
+        str(league): sorted(set(group["_team_home_canonical"].dropna().astype(str)) | set(group["_team_away_canonical"].dropna().astype(str)))
+        for league, group in zk.groupby("_league_canonical")
+    }
+    unmatched_team_frequency = Counter()
+    for _, unmatched in matched.loc[matched["match_status"].eq("no_candidate")].iterrows():
+        unmatched_team_frequency[str(unmatched["home"])] += 1
+        unmatched_team_frequency[str(unmatched["away"])] += 1
     xg_leagues = sorted(str(v) for v in pd.read_csv(args.xg, usecols=["League"], encoding="utf-8-sig")["League"].dropna().unique())
     summary = {
         "source_file": str(args.xg), "source_rows": int(len(date_frame)),
         "eligible_xg_rows_through_cutoff": int(len(xg)),
-        "xg_rows_after_cutoff_excluded_by_date_only": int(len(date_frame) - len(xg)),
+        "xg_rows_after_cutoff_excluded_by_date_only": int((xg_dates.notna() & (xg_dates > CUTOFF)).sum()),
         "invalid_xg_dates_excluded": int(xg_dates.isna().sum()),
         "validation_cutoff_inclusive": str(CUTOFF.date()),
         "zk_train_validation_rows": int(len(zk)),
-        "zk_leagues_available": zk_leagues, "xg_leagues": xg_leagues,
+        "zk_leagues_available": zk_leagues, "zk_teams_by_league": zk_teams_by_league,
+        "xg_unmatched_team_frequency": dict(unmatched_team_frequency.most_common(30)),
+        "xg_leagues": xg_leagues,
         "xg_league_mapping": {k: LEAGUES.get(token(k).replace("_", " "), "UNMAPPED") for k in xg_leagues},
         "status_counts": dict(statuses), "by_league": per_league,
         "market_odds_coverage_on_matched_rows": market_summary,
