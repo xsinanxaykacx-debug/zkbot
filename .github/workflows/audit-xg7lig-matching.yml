@@ -1,14 +1,14 @@
-name: Audit xg7lig and xg18 matching against ZK train-validation data
+name: Audit all uploaded league odds and xG matching
 
 on:
   workflow_dispatch:
   pull_request:
     branches: [main, "research/xg7lig-audit", "research/xg18-odds-audit"]
     paths:
-      - "xg7lig.csv"
-      - "xg18.csv"
+      - "*.csv"
       - "scripts/audit_xg7lig_matching.py"
       - "scripts/audit_xg18_odds_matching.py"
+      - "scripts/audit_all_league_odds.py"
       - "scripts/build_locked_dataset.py"
       - "src/zk2/data/**"
       - ".github/workflows/audit-xg7lig-matching.yml"
@@ -19,7 +19,7 @@ permissions:
 jobs:
   match-audit:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 35
     steps:
       - name: Checkout audit branch
         uses: actions/checkout@v4
@@ -35,16 +35,20 @@ jobs:
         run: python scripts/build_locked_dataset.py DATA.csv EPL.xlsm --output zk2_locked_dataset.csv.gz --manifest zk2_dataset_manifest.json
       - name: Match xg7lig to train and validation rows only
         run: python scripts/audit_xg7lig_matching.py --xg xg7lig.csv --zk zk2_locked_dataset.csv.gz --json audit-results/xg7lig_match_audit.json --csv audit-results/xg7lig_match_rows.csv
-      - name: Match xg18 and attach only verified odds from ZK rows
-        run: python scripts/audit_xg18_odds_matching.py --xg xg18.csv --zk zk2_locked_dataset.csv.gz --json audit-results/xg18_odds_audit.json --csv audit-results/xg18_matched_odds.csv
-      - name: Upload match audit reports
+      - name: Match xg18 against legacy ZK odds sources
+        run: python scripts/audit_xg18_odds_matching.py --xg xg18.csv --zk zk2_locked_dataset.csv.gz --json audit-results/xg18_legacy_odds_audit.json --csv audit-results/xg18_legacy_matched_odds.csv
+      - name: Audit every uploaded league odds CSV
+        run: python scripts/audit_all_league_odds.py --xg xg18.csv --out audit-results/all-leagues
+      - name: Upload complete league odds audit
         uses: actions/upload-artifact@v4
         with:
-          name: xg18-and-xg7lig-match-audit
+          name: xg18-all-league-odds-audit
           path: |
             audit-results/xg7lig_match_audit.json
             audit-results/xg7lig_match_rows.csv
-            audit-results/xg18_odds_audit.json
-            audit-results/xg18_matched_odds.csv
+            audit-results/xg18_legacy_odds_audit.json
+            audit-results/xg18_legacy_matched_odds.csv
+            audit-results/all-leagues/league_odds_inventory.json
+            audit-results/all-leagues/xg18_all_league_odds_matches.csv
           if-no-files-found: error
           retention-days: 30
