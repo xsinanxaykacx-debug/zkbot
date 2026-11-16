@@ -13,7 +13,7 @@ from pathlib import Path
 FIELDS = [
     "MatchID", "kickoff_utc", "captured_at", "home_odds", "draw_odds",
     "away_odds", "source", "provider_id", "pinnacle_source_id",
-    "snapshot_kind", "is_closing",
+    "snapshot_kind", "is_closing", "provider_league", "provider_home_team",\n    "provider_away_team", "timestamp_semantics",
 ]
 
 def value_at(obj, path):
@@ -43,7 +43,15 @@ def normalize(item, mapping, provider_id, source):
     if not row["MatchID"]:
         raise ValueError("empty MatchID")
     row["kickoff_utc"] = utc_iso(row["kickoff_utc"])
-    row["captured_at"] = utc_iso(row["captured_at"])
+    if mapping["captured_at"] == "$ingested_at":
+        row["captured_at"] = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+        row["timestamp_semantics"] = "local_ingestion_time"
+    else:
+        row["captured_at"] = utc_iso(row["captured_at"])
+        row["timestamp_semantics"] = "provider_supplied_timestamp_unverified"
+    for field in ("provider_league", "provider_home_team", "provider_away_team"):
+        path = mapping.get(field)
+        row[field] = str(value_at(item, path)) if path else ""
     for field in ("home_odds", "draw_odds", "away_odds"):
         row[field] = float(row[field])
         if not (row[field] > 1 and row[field] < float("inf")):
