@@ -13,7 +13,8 @@ from pathlib import Path
 FIELDS = [
     "MatchID", "kickoff_utc", "captured_at", "home_odds", "draw_odds",
     "away_odds", "source", "provider_id", "pinnacle_source_id",
-    "snapshot_kind", "is_closing", "provider_league", "provider_home_team",\n    "provider_away_team", "timestamp_semantics",
+    "snapshot_kind", "is_closing", "provider_league", "provider_home_team",
+    "provider_away_team", "timestamp_semantics",
 ]
 
 def value_at(obj, path):
