@@ -1,9 +1,6 @@
 #!/usr/bin/env python3
-"""Join xg18 pre-match history with all 70 Football-Data odds CSVs.
-
-Only xG matches dated on/before 2024-04-08 are eligible. A match is accepted
-only on exact date + mapped league + normalized home/away teams + FT score.
-Conflicting duplicates remain unmatched. No final-test rows are inspected.
+"""Join official non-test XG18 train/validation matches with all 70 odds CSVs.
+Eligibility comes only from official split MatchIDs; final-test IDs are excluded.
 """
 from __future__ import annotations
 import argparse, json, re, unicodedata
@@ -11,7 +8,6 @@ from collections import Counter, defaultdict
 from pathlib import Path
 import pandas as pd
 
-CUTOFF = pd.Timestamp("2024-04-08")
 LEAGUE_TO_CODE = {
     "england premier league":"E0", "premier league":"E0", "premier lig":"E0",
     "england league one":"E2", "league one":"E2", "ingiltere league one":"E2",
@@ -72,6 +68,7 @@ def main():
     ap=argparse.ArgumentParser()
     ap.add_argument("--xg",type=Path,default=Path("xg18.csv"))
     ap.add_argument("--odds-dir",type=Path,default=Path("."))
+    ap.add_argument("--include-csv",type=Path,action="append",required=True)
     ap.add_argument("--out",type=Path,default=Path("artifacts/xg18_odds"))
     a=ap.parse_args()
     paths=sorted(p for p in a.odds_dir.glob("*.csv") if re.match(r"^(B1|D1|D2|E0|E2|F1|F2|I1|I2|N1|P1|SP1|SP2|T1)( \(\d+\))?\.csv$",p.name,re.I))
@@ -92,10 +89,21 @@ def main():
         for _,r in d.loc[valid].iterrows():
             records.append({"date":r["_date"],"code":code,"home":r["_home"],"away":r["_away"],"hg":r["_hg"],"ag":r["_ag"],"file":p.name,"row":r})
     x=read_csv(a.xg)
-    need={"Date","League","HomeTeam","AwayTeam","FTHG","FTAG","Home_xG","Away_xG"}
+    need={"MatchID","Date","League","HomeTeam","AwayTeam","FTHG","FTAG","Home_xG","Away_xG"}
     if not need.issubset(x.columns): raise ValueError(f"xg18 missing {sorted(need-set(x.columns))}")
-    x["_date"]=pd.to_datetime(x["Date"],errors="coerce",utc=True).dt.tz_convert(None).dt.normalize()
-    eligible=x.loc[x["_date"].notna() & (x["_date"]<=CUTOFF)].copy()
+    source_columns=list(x.columns)
+    split_frames=[read_csv(p) for p in a.include_csv]
+    if any("MatchID" not in d for d in split_frames): raise ValueError("Every include CSV must contain MatchID")
+    split_ids=pd.concat([d["MatchID"].astype(str) for d in split_frames],ignore_index=True)
+    if split_ids.duplicated().any(): raise ValueError("Duplicate MatchID across official train/validation split files")
+    include_ids=set(split_ids)
+    x_ids=x["MatchID"].astype(str)
+    missing_ids=sorted(include_ids-set(x_ids))
+    if missing_ids: raise ValueError(f"{len(missing_ids)} official train/validation MatchIDs are absent from xg18.csv; examples={missing_ids[:5]}")
+    eligible=x.loc[x_ids.isin(include_ids)].copy()
+    if len(eligible)!=len(include_ids): raise ValueError("xg18 MatchIDs are not unique or split row counts do not reconcile")
+    eligible["_date"]=pd.to_datetime(eligible["Date"],errors="coerce",utc=True).dt.tz_convert(None).dt.normalize()
+    if eligible["_date"].isna().any(): raise ValueError("Invalid dates in official train/validation split rows")
     by_key=defaultdict(list)
     for r in records: by_key[(r["date"],r["code"],r["home"],r["away"])].append(r)
     out=[]; status=Counter(); by_league=defaultdict(Counter)
@@ -115,7 +123,7 @@ def main():
         elif cand: st="score_mismatch"
         else: st="no_candidate"
         status[st]+=1; by_league[str(r["League"])][st]+=1
-        row={"xg_source_row":int(idx),"MatchID":r.get("MatchID"),"Date":str(r["_date"].date()),"League":r["League"],"HomeTeam":r["HomeTeam"],"AwayTeam":r["AwayTeam"],"FTHG":hg,"FTAG":ag,"Home_xG":r["Home_xG"],"Away_xG":r["Away_xG"],"odds_match_status":st,"odds_source_file":chosen["file"] if chosen else None}
+        row={c:r[c] for c in source_columns}; row.update({"xg_source_row":int(idx),"odds_match_status":st,"odds_source_file":chosen["file"] if chosen else None})
         if chosen:
             for c in odds_columns: row["odds_"+c]=chosen["row"].get(c)
         else:
@@ -127,7 +135,7 @@ def main():
         cols=[c for c in cols if c in matched]
         ok=matched[cols].notna().all(axis=1) if cols else pd.Series(False,index=matched.index)
         return {"complete_rows":int(ok.sum()),"matched_rows":int(len(matched)),"coverage_pct":round(100*ok.mean(),2) if len(matched) else 0.0}
-    summary={"xg18_rows":len(x),"eligible_xg_rows_through_2024_04_08":len(eligible),"xg_rows_after_cutoff_excluded":int((x["_date"]>CUTOFF).sum()),"odds_files":len(paths),"odds_source_rows":file_rows,"odds_valid_date_rows":len(records),"joined_rows":len(joined),"matched_rows":len(matched),"unmatched_rows":int(len(joined)-len(matched)),"status_counts":dict(status),"by_league":{k:{"total":sum(v.values()),"matched":v["matched"]+v["matched_identical_duplicate"],"statuses":dict(v)} for k,v in sorted(by_league.items())},"market_coverage_on_matched_rows":{"1x2_avg":cov(["odds_AvgH","odds_AvgD","odds_AvgA"]),"1x2_b365":cov(["odds_B365H","odds_B365D","odds_B365A"]),"ou25_avg":cov(["odds_Avg>2.5","odds_Avg<2.5"]),"ou25_b365":cov(["odds_B365>2.5","odds_B365<2.5"])},"league_csv_inventory":inventory,"final_test_rows_used":0,"policy":"exact date + mapped league + normalized home/away + FT score; ambiguous conflicts unmatched; odds missing remain null; final-test xG dates excluded before matching"}
+    summary={"xg18_rows":len(x),"official_train_validation_rows":len(eligible),"official_split_match_ids":len(include_ids),"xg_rows_excluded_outside_official_train_validation":int(len(x)-len(eligible)),"split_ids_missing_from_xg18":len(missing_ids),"odds_files":len(paths),"odds_source_rows":file_rows,"odds_valid_date_rows":len(records),"joined_rows":len(joined),"matched_rows":len(matched),"unmatched_rows":int(len(joined)-len(matched)),"status_counts":dict(status),"by_league":{k:{"total":sum(v.values()),"matched":v["matched"]+v["matched_identical_duplicate"],"statuses":dict(v)} for k,v in sorted(by_league.items())},"market_coverage_on_matched_rows":{"1x2_avg":cov(["odds_AvgH","odds_AvgD","odds_AvgA"]),"1x2_b365":cov(["odds_B365H","odds_B365D","odds_B365A"]),"ou25_avg":cov(["odds_Avg>2.5","odds_Avg<2.5"]),"ou25_b365":cov(["odds_B365>2.5","odds_B365<2.5"])},"league_csv_inventory":inventory,"final_test_rows_used":0,"policy":"official train+validation MatchID whitelist; final-test IDs excluded; exact date + mapped league + normalized home/away + FT score; ambiguous conflicts unmatched; original xG columns preserved; odds missing remain null"}
     a.out.mkdir(parents=True,exist_ok=True)
     joined.to_csv(a.out/"xg18_with_all_league_odds.csv",index=False,encoding="utf-8")
     (a.out/"merge_report.json").write_text(json.dumps(summary,ensure_ascii=False,indent=2),encoding="utf-8")
