@@ -201,16 +201,20 @@ def report(a):
             if 0 <= age <= 120: eligible.append((captured,snap))
         if eligible:
             snap=max(eligible,key=lambda z:z[0])[1]
-            proxy[mid]=snap
+            proxy[mid]={"snapshot":snap,"age_seconds":round((kickoff-utc(snap["captured_at"])).total_seconds(),3)}
     out["observed_closing_proxy"]={"window_seconds":120,"n":len(proxy),
       "status":"proxy_only_not_official_pinnacle_closing",
-      "providers":dict((pid,sum(1 for x in proxy.values() if x.get("provider_id")==pid))
-        for pid in sorted({x.get("provider_id","unknown") for x in proxy.values()}))}
+      "providers":dict((pid,sum(1 for x in proxy.values() if x["snapshot"].get("provider_id")==pid))
+        for pid in sorted({x["snapshot"].get("provider_id","unknown") for x in proxy.values()})),
+      "matches":[{"match_id":mid,"provider_id":x["snapshot"].get("provider_id"),
+        "source":x["snapshot"].get("source"),"captured_at":x["snapshot"]["captured_at"],
+        "age_seconds":x["age_seconds"],"observed_closing_proxy":True}
+        for mid,x in sorted(proxy.items())]}
     if proxy:
         px=sorted(proxy)
         out["observed_closing_proxy"]["ensemble_1x2"]=metric(pp(px,"probabilities_1x2"),yy(px))
         out["observed_closing_proxy"]["provider_fair_1x2"]=metric(
-          np.array([proxy[x]["fair_probs_1x2"] for x in px]),yy(px))
+          np.array([proxy[x]["snapshot"]["fair_probs_1x2"] for x in px]),yy(px))
     for lg in sorted({preds[x]["league"] for x in ids}):
         ms=[x for x in ids if preds[x]["league"]==lg]; out["by_league"][lg]=metric(pp(ms,"probabilities_1x2"),yy(ms))
     times=[utc(preds[x]["generated_at"]) for x in ids]; days=(max(times)-min(times)).days
