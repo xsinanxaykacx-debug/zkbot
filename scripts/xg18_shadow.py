@@ -121,6 +121,7 @@ def add_odds(a):
         provider_id=str(r.get("provider_id") or provider_default).strip()
         if not provider_id: raise ValueError("provider_id is required")
         if source=="pinnacle" and provider_id!="pinnacle_official": raise ValueError("Only provider_id=pinnacle_official may be labelled as Pinnacle-origin data")
+        provider_event_id=str(r.get("provider_event_id") or "").strip() or None
         pinnacle_id=str(r.get("pinnacle_source_id") or "").strip() or None
         t=utc(r["captured_at"]); kickoff=utc(r.get("kickoff_utc") or preds[mid]["kickoff_utc"])
         if kickoff!=utc(preds[mid]["kickoff_utc"]): raise ValueError("CSV kickoff_utc does not match the immutable fixture prediction")
@@ -136,7 +137,7 @@ def add_odds(a):
         captured= t.isoformat().replace("+00:00","Z")
         append(a.ledger,{"event_id":str(uuid.uuid4()),"event_type":"odds_snapshot",
           "recorded_at":datetime.now(timezone.utc).isoformat(),"match_id":mid,"source":source,
-          "provider_id":provider_id,"pinnacle_source_id":pinnacle_id,"captured_at":captured,
+          "provider_id":provider_id,"provider_event_id":provider_event_id,"pinnacle_source_id":pinnacle_id,"captured_at":captured,
           "kickoff_utc":kickoff.isoformat().replace("+00:00","Z"),"is_closing":close,
           "observed_closing_proxy":False,"snapshot_kind":str(r.get("snapshot_kind") or "live_snapshot"),
           "provider_league":str(r.get("provider_league") or ""),"provider_home_team":str(r.get("provider_home_team") or ""),
