@@ -11,9 +11,9 @@ permissions:
   actions: read
 
 jobs:
-  inspect-and-test:
+  validate:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
         with:
@@ -21,53 +21,41 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.13"
-      - name: Assemble frozen source in documented order
+      - name: Assemble and verify frozen model package
         shell: bash
         run: |
           cat research/xg18-frozen-source.zip.part00 research/xg18-frozen-source.zip.part01 research/xg18-frozen-source.zip.part02 research/xg18-frozen-source.zip.part03 research/xg18-frozen-source.zip.part04 research/xg18-frozen-source.zip.part05 research/xg18-frozen-source.zip.part06 research/xg18-frozen-source.zip.part06b research/xg18-frozen-source.zip.part07 research/xg18-frozen-source.zip.part08 research/xg18-frozen-source.zip.part09 > /tmp/xg18-frozen-source.zip
+          echo "d8d62f65b8887084a80d1da84ec6a758c401257172e50d5ef8a7137cc1dbc7aa  /tmp/xg18-frozen-source.zip" | sha256sum -c -
           python - <<'PY'
-          import hashlib, zipfile, pathlib
-          p=pathlib.Path('/tmp/xg18-frozen-source.zip')
-          print('archive_bytes',p.stat().st_size)
-          print('archive_sha256',hashlib.sha256(p.read_bytes()).hexdigest())
-          z=zipfile.ZipFile(p)
-          print('members',z.namelist())
+          import pathlib, zipfile, hashlib
+          z=zipfile.ZipFile('/tmp/xg18-frozen-source.zip')
           bad=z.testzip()
-          print('zip_crc_test','PASS' if bad is None else f'FAIL:{bad}')
-          if bad is not None: raise SystemExit('ZIP CRC failure')
+          if bad is not None: raise SystemExit(f'ZIP CRC failure: {bad}')
           z.extractall('frozen_src')
+          p=pathlib.Path('frozen_src/xg18_frozen_model.py')
+          actual=hashlib.sha256(p.read_bytes()).hexdigest()
+          expected='79d89fa9491643590b96eb0e4a2761b0612a245247bd1fe40ed6b29710071e6e'
+          print('frozen_module_sha256',actual)
+          if actual != expected: raise SystemExit('Frozen model module hash mismatch')
+          print('Frozen source integrity: PASS')
           PY
       - name: Install frozen runtime
         run: python -m pip install -r frozen_src/requirements-xg18-freeze.txt
-      - name: Inspect exact frozen APIs and input schema
-        shell: bash
-        run: |
-          python - <<'PY'
-          import ast, pathlib, hashlib, inspect, sys
-          sys.path.insert(0,'frozen_src')
-          import xg18_frozen_model as m
-          p=pathlib.Path('frozen_src/xg18_frozen_model.py')
-          print('module_sha256',hashlib.sha256(p.read_bytes()).hexdigest())
-          for name,obj in vars(m).items():
-              if inspect.isfunction(obj) or inspect.isclass(obj):
-                  print(name,inspect.signature(obj))
-                  if inspect.isclass(obj):
-                      for mn,mo in vars(obj).items():
-                          if callable(mo) and not mn.startswith('__'):
-                              try: print(' ',mn,inspect.signature(mo))
-                              except Exception: pass
-          print('--- MODULE SOURCE ---')
-          print(p.read_text(encoding='utf-8'))
-          PY
-      - name: Download permitted non-test data
+      - name: Download permitted train and validation partitions
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh run download 43848824932 --repo ${{ github.repository }} --name zk2-xg18-split-v1-non-test --dir data
-          python - <<'PY'
-          import pathlib, pandas as pd
-          for name in ['xg18_train.csv','xg18_val.csv']:
-              d=pd.read_csv(pathlib.Path('data')/name)
-              print(name,'rows=',len(d),'columns=',list(d.columns))
-              print(d.head(2).to_string(index=False))
-          PY
+          test -s data/xg18_train.csv
+          test -s data/xg18_val.csv
+      - name: Evaluate frozen model on chronological validation
+        run: |
+          python scripts/evaluate_xg18_validation.py --train data/xg18_train.csv --validation data/xg18_val.csv --predictions reports/xg18_validation_predictions.csv --report reports/xg18_validation_report.json
+      - name: Upload reproducible validation outputs
+        uses: actions/upload-artifact@v4
+        with:
+          name: xg18-bot-validation-results
+          path: |
+            reports/xg18_validation_predictions.csv
+            reports/xg18_validation_report.json
+          if-no-files-found: error
