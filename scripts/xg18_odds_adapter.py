@@ -152,6 +152,7 @@ def csv_command(a):
     with Path(a.input).open(newline="", encoding="utf-8-sig") as f:
         for item in csv.DictReader(f):
             rows.append(normalize(item, mapping, a.provider_id, a.source))
+    rows = apply_match_map(rows, a.match_map)
     write_rows(rows, a.output)
     print(json.dumps({"status":"normalized_not_verified","provider_id":a.provider_id,
                       "records":len(rows),"output":a.output}, indent=2))
@@ -176,6 +177,7 @@ def main():
     q.add_argument("--provider-id", required=True)
     q.add_argument("--source", choices=("pinnacle","third_party"), default="third_party")
     q.add_argument("--mapping", required=True)
+    q.add_argument("--match-map", default="", help="Reviewed exact provider_event_id to internal MatchID crosswalk CSV")
     q.add_argument("--output", required=True)
     q.set_defaults(fn=csv_command)
     a = p.parse_args()
