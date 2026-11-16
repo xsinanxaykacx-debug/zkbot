@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import json
 import re
+from difflib import get_close_matches
 import unicodedata
 from collections import Counter, defaultdict
 from pathlib import Path
@@ -112,6 +113,7 @@ def main() -> None:
                    if p.name.lower() not in {"xg18.csv", "xg7lig.csv"}
                    and re.match(r"^(B1|D1|D2|E0|E1|E2|E3|E4|F1|F2|I1|I2|N1|P1|SP1|SP2|T1|T2)( \(\d+\))?\.csv$", p.name, re.I))
     inventory, records = [], []
+    source_team_display = defaultdict(dict)
     for path in files:
         df = read_csv(path)
         if not {"Date", "HomeTeam", "AwayTeam", "FTHG", "FTAG"}.issubset(df.columns):
@@ -143,6 +145,8 @@ def main() -> None:
             if pd.isna(row["_date"]):
                 continue
             flags = odds_flags(row)
+            source_team_display[code].setdefault(row["_home_key"], str(row["HomeTeam"]))
+            source_team_display[code].setdefault(row["_away_key"], str(row["AwayTeam"]))
             records.append({
                 "file": path.name, "league_code": code, "date": row["_date"],
                 "home_key": row["_home_key"], "away_key": row["_away_key"],
@@ -205,7 +209,16 @@ def main() -> None:
                 "league": row["League"], "league_code": code,
                 "home": row["HomeTeam"], "away": row["AwayTeam"],
                 "home_score": row["FTHG"], "away_score": row["FTAG"],
-                "status": status, "near_date_score_confirmed": bool(nearest),
+                "status": status,
+                "home_source_name_candidates": " | ".join(
+                    source_team_display.get(code, {}).get(k, k)
+                    for k in get_close_matches(team(row["HomeTeam"]), list(source_team_display.get(code, {})), n=3, cutoff=0.55)
+                ),
+                "away_source_name_candidates": " | ".join(
+                    source_team_display.get(code, {}).get(k, k)
+                    for k in get_close_matches(team(row["AwayTeam"]), list(source_team_display.get(code, {})), n=3, cutoff=0.55)
+                ),
+                "near_date_score_confirmed": bool(nearest),
                 "nearest_date_delta_days": nearest[0] if nearest else None,
                 "near_date_source_file": nearest[1]["file"] if nearest else None,
                 "near_date_source_date": str(nearest[1]["date"].date()) if nearest else None,
