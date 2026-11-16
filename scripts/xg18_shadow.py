@@ -149,6 +149,16 @@ def report(a):
     def pp(ms,key): return np.array([[preds[x][key][k] for k in ("home","draw","away")] for x in ms])
     out={"model_version":VERSION,"settled_matches":len(ids),"ensemble_1x2":metric(pp(ids,"probabilities_1x2"),yy(ids)),
       "elo_reference_1x2":metric(pp(ids,"elo_reference_1x2"),yy(ids)),"market_comparison":{"n":0,"status":"no_verified_closing_odds"},"by_league":{}}
+    # These are Team-Poisson-only auxiliary markets, not frozen ensemble outputs.
+    goals=np.array([res[x]["home_goals"]+res[x]["away_goals"] for x in ids])
+    def binary_metric(prob,target):
+        prob=np.clip(np.asarray(prob,dtype=float),1e-15,1-1e-15); target=np.asarray(target,dtype=int)
+        return {"n":len(target),"log_loss":float(-(target*np.log(prob)+(1-target)*np.log(1-prob)).mean()),
+                "brier":float(((prob-target)**2).mean())}
+    aux=[preds[x]["auxiliary_team_poisson_only"] for x in ids]
+    out["auxiliary_team_poisson_only"]={"ou25":binary_metric([x["over_2_5"] for x in aux],goals>2),
+      "btts_yes":binary_metric([x["btts_yes"] for x in aux],[(res[x]["home_goals"]>0 and res[x]["away_goals"]>0) for x in ids]),
+      "note":"Not part of the frozen 1X2 ensemble; no Pinnacle OU/BTTS comparison in this release."}
     mi=[x for x in ids if x in odds]
     if mi: out["market_comparison"]={"n":len(mi),"source":"Pinnacle","de_vig":"proportional_overround_removal",
       "ensemble_1x2":metric(pp(mi,"probabilities_1x2"),yy(mi)),"pinnacle_fair_1x2":metric(np.array([odds[x]["fair_probs_1x2"] for x in mi]),yy(mi))}
