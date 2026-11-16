@@ -1,0 +1,82 @@
+{
+  "model_version": "zk2-v1.0",
+  "freeze_date": "2026-11-15",
+  "model_code_commit": "a0a32f04bebdac8e3097a0137c037562d5d3d4d6",
+  "artifact": {
+    "id": 14175146586,
+    "name": "zk2-locked-dataset-v1",
+    "workflow_run_id": 43747885770,
+    "workflow_run_commit": "40de31518f63077d35ca16a32b97e565d5b4e2a9",
+    "archive_sha256": "49b7ad566c896cecf5bef09a5996f795dd9e54e6bba60b2b623e0b74df1a051f",
+    "model_joblib_sha256": "f33be4ea3649d8228df311da0071fa5abdcdd0d85d2b21097f227817624e0452",
+    "model_joblib_path": "artifacts/zk2_market_models_xg.joblib",
+    "model_joblib_size_bytes": 31434
+  },
+  "data": {
+    "locked_dataset_sha256": "36b02c9e378ef00ad3b9599279042671e8b4b1f2fdff1e61b3b606cfac4bf160",
+    "xg_enriched_dataset_sha256": "55402cc97c1e894a7f66203cd56a0e0f8ffd57c14737e3714b13f2e9015f7388",
+    "manifest_sha256": "67e5b96fd540aefb2febd0afe4dc4bb28cf703512fadb6c4649ebf53ed0f78f6"
+  },
+  "environment": {
+    "python": "3.11.18",
+    "scikit_learn": "1.9.1",
+    "numpy": "2.4.6",
+    "pandas": "3.1.1",
+    "scipy": "1.17.1",
+    "joblib": "1.6.0",
+    "lightgbm": "4.7.0"
+  },
+  "split": {
+    "train": {
+      "start": "2014-01-11",
+      "end": "2022-10-18",
+      "rows": 8177
+    },
+    "validation": {
+      "start": "2022-10-19",
+      "end": "2024-04-08",
+      "rows": 1545
+    },
+    "final_test": {
+      "start": "2024-04-12",
+      "end": "2026-09-20",
+      "rows": 1550
+    }
+  },
+  "verification": {
+    "build_workflow_run_id": 43747885770,
+    "build_workflow_run_number": 38,
+    "pytest_run_id": 43747885749,
+    "pytest_run_number": 182,
+    "smoke_test": "passed",
+    "pytest": "passed",
+    "model_markets": [
+      "1x2",
+      "ou25",
+      "kg"
+    ],
+    "routing": [
+      "EPL xG route for OU/KG",
+      "non-EPL baseline-only route for OU/KG"
+    ],
+    "final_test_policy": "Not evaluated, scored, or used for model selection."
+  },
+  "prospective_validation": {
+    "start_date_inclusive": "2026-09-21",
+    "minimum_matches_before_primary_review": 100,
+    "metrics": [
+      "log_loss",
+      "brier_score"
+    ],
+    "policy": "No model tuning or model selection using the locked final-test partition."
+  },
+  "git": {
+    "repository": "xsinanxaykacx-debug/zkbot",
+    "branch": "research/xg-source-schema-audit",
+    "pull_request": 3,
+    "pull_request_status_at_freeze": "open",
+    "pull_request_merged": false,
+    "intended_tag": "zk2-v1.0",
+    "tag_target_policy": "Create annotated tag zk2-v1.0 on the commit that contains this finalized manifest; record that commit SHA in the tag/release metadata, not inside this self-referential file."
+  }
+}

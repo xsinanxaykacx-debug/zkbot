@@ -1,82 +1,111 @@
 {
-  "model_version": "zk2-v1.0",
-  "freeze_date": "2026-11-15",
-  "model_code_commit": "a0a32f04bebdac8e3097a0137c037562d5d3d4d6",
-  "artifact": {
-    "id": 14175146586,
-    "name": "zk2-locked-dataset-v1",
-    "workflow_run_id": 43747885770,
-    "workflow_run_commit": "40de31518f63077d35ca16a32b97e565d5b4e2a9",
-    "archive_sha256": "49b7ad566c896cecf5bef09a5996f795dd9e54e6bba60b2b623e0b74df1a051f",
-    "model_joblib_sha256": "f33be4ea3649d8228df311da0071fa5abdcdd0d85d2b21097f227817624e0452",
-    "model_joblib_path": "artifacts/zk2_market_models_xg.joblib",
-    "model_joblib_size_bytes": 31434
+  "schema_version": "1.0",
+  "model_id": "zk2-xg18-frozen-ensemble-v1",
+  "freeze_date": "2026-11-16",
+  "status": "FROZEN_PENDING_CODE_COMMIT_SHA",
+  "model_code_commit": "PENDING_FIRST_FREEZE_COMMIT",
+  "repository": "xsinanxaykacx-debug/zkbot",
+  "branch": "research/xg18-frozen-ensemble-v1",
+  "model_scope": "1X2 probability ensemble only; OU2.5 and BTTS are not part of this frozen ensemble",
+  "selection_protocol": {
+    "selection_data": "xg18_train.csv only",
+    "chronology": "UTC-date boundaries; first 60% base fit, next 20% hyperparameter selection, final 20% ensemble-weight selection",
+    "selection_metric": "1X2 log loss",
+    "train_rows": 12971,
+    "validation_rows": 2763,
+    "validation_rows_used_for_selection": false,
+    "final_test_used_for_selection": false
   },
-  "data": {
-    "locked_dataset_sha256": "36b02c9e378ef00ad3b9599279042671e8b4b1f2fdff1e61b3b606cfac4bf160",
-    "xg_enriched_dataset_sha256": "55402cc97c1e894a7f66203cd56a0e0f8ffd57c14737e3714b13f2e9015f7388",
-    "manifest_sha256": "67e5b96fd540aefb2febd0afe4dc4bb28cf703512fadb6c4649ebf53ed0f78f6"
+  "frozen_hyperparameters": {
+    "team_poisson": {
+      "alpha": 10,
+      "penalty": "L2 on team attack and defence log effects"
+    },
+    "dixon_coles": {
+      "alpha": 10,
+      "rho_reference_estimate_full_training": -0.035182380133403184,
+      "rho_bounds": [
+        -0.2,
+        0.2
+      ],
+      "rho_policy": "rho is a fitted likelihood parameter; reference value is recorded from the 12,971-row full-training refit. On the final permitted train+validation refit it is re-estimated by the same frozen MLE algorithm using fit rows only. Never estimate or tune rho using test rows."
+    },
+    "elo": {
+      "K": 32,
+      "home_advantage_elo_points": 80,
+      "davidson_draw_nu": 0.8,
+      "initial_rating": 1500,
+      "rating_scope": "league + normalized team identity",
+      "same_day_policy": "predict every fixture on a UTC calendar date before applying any results from that date"
+    }
   },
-  "environment": {
+  "frozen_ensemble_weights": {
+    "team_poisson": 0.13958888173927925,
+    "dixon_coles": 0,
+    "elo": 0.8604111182607207,
+    "method": "convex probability average; weights fixed from the separate final 20% training-only weight-calibration block"
+  },
+  "final_test": {
+    "status": "SEALED_NOT_OPENED",
+    "artifact_id": 14217050724,
+    "artifact_name": "zk2-xg18-split-v1-SEALED-TEST",
+    "workflow_run_id": 43848824932,
+    "workflow_run_commit": "3b9b705fd65b92d3dc1d4334e290158901414e98",
+    "artifact_size_bytes": 160429,
+    "artifact_sha256": "efdd550e3cbf2fa397b0eac64ab0ae321965021e056b106fa5e8893e4da036da",
+    "expected_rows": 2771,
+    "expected_date_range": {
+      "start": "2026-03-15",
+      "end": "2026-11-14"
+    },
+    "policy": "Do not download, extract, read, score, or use for selection until the one-time final evaluation is explicitly run after this freeze commit is reviewed."
+  },
+  "non_test_data": {
+    "artifact_id": 14216706507,
+    "artifact_name": "zk2-xg18-split-v1-non-test",
+    "workflow_run_id": 43848824932,
+    "artifact_size_bytes": 849133,
+    "artifact_sha256": "805e71e113772d902bd76a0bcff98823f4b8bb573a2dbc17afe0adc8074ffe33",
+    "train_rows": 12971,
+    "validation_rows": 2763
+  },
+  "source_data": {
+    "file": "xg18.csv",
+    "git_blob_sha": "ed2213748abb12a1815c11376931b97568c17cf9",
+    "split_builder": "scripts/build_xg18_split.py",
+    "split_builder_git_blob_sha": "4dca859f63903b29aec7895c59077517313f0664",
+    "split_source_commit": "3b9b705fd65b92d3dc1d4334e290158901414e98"
+  },
+  "code_archive": {
+    "path": "research/xg18-frozen-source.zip",
+    "sha256": "7b69c44f1cb08436680951ee12b8a0c48f579e73538bbaf3b98ed2c911fabc3d",
+    "contents": [
+      "xg18_frozen_model.py",
+      "evaluate_xg18_final_test.py",
+      "requirements-xg18-freeze.txt",
+      "README_XG18_FREEZE.md"
+    ],
+    "model_module_sha256": "79d89fa9491643590b96eb0e4a2761b0612a245247bd1fe40ed6b29710071e6e",
+    "evaluator_sha256": "2382797649e71608c1e1e8f63c9449830e6482c07ce98a8ea5811c58e5886623"
+  },
+  "runtime": {
     "python": "3.11.18",
-    "scikit_learn": "1.9.1",
     "numpy": "2.4.6",
     "pandas": "3.1.1",
     "scipy": "1.17.1",
-    "joblib": "1.6.0",
-    "lightgbm": "4.7.0"
+    "numba": "0.65.1"
   },
-  "split": {
-    "train": {
-      "start": "2014-01-11",
-      "end": "2022-10-18",
-      "rows": 8177
-    },
-    "validation": {
-      "start": "2022-10-19",
-      "end": "2024-04-08",
-      "rows": 1545
-    },
-    "final_test": {
-      "start": "2024-04-12",
-      "end": "2026-09-20",
-      "rows": 1550
-    }
-  },
-  "verification": {
-    "build_workflow_run_id": 43747885770,
-    "build_workflow_run_number": 38,
-    "pytest_run_id": 43747885749,
-    "pytest_run_number": 182,
-    "smoke_test": "passed",
-    "pytest": "passed",
-    "model_markets": [
-      "1x2",
-      "ou25",
-      "kg"
-    ],
-    "routing": [
-      "EPL xG route for OU/KG",
-      "non-EPL baseline-only route for OU/KG"
-    ],
-    "final_test_policy": "Not evaluated, scored, or used for model selection."
-  },
-  "prospective_validation": {
-    "start_date_inclusive": "2026-09-21",
-    "minimum_matches_before_primary_review": 100,
-    "metrics": [
-      "log_loss",
-      "brier_score"
-    ],
-    "policy": "No model tuning or model selection using the locked final-test partition."
-  },
-  "git": {
-    "repository": "xsinanxaykacx-debug/zkbot",
-    "branch": "research/xg-source-schema-audit",
-    "pull_request": 3,
-    "pull_request_status_at_freeze": "open",
-    "pull_request_merged": false,
-    "intended_tag": "zk2-v1.0",
-    "tag_target_policy": "Create annotated tag zk2-v1.0 on the commit that contains this finalized manifest; record that commit SHA in the tag/release metadata, not inside this self-referential file."
+  "one_time_execution_guards": [
+    "explicit --confirm-one-time CLI flag required",
+    "sealed artifact SHA-256 verified before extraction",
+    "test row count and date range asserted",
+    "train/test MatchID overlap rejected",
+    "chronological fit/test separation asserted",
+    "report file opened exclusively; rerun/overwrite refused",
+    "no test-driven tuning or model selection"
+  ],
+  "legacy_manifest": {
+    "preserved_as": "freeze_manifest_legacy_zk2.json",
+    "note": "Previous root freeze_manifest.json described the separate 8,177/1,545/1,550 ZK2 logistic-regression/LightGBM experiment; it is preserved unchanged under the legacy filename."
   }
 }
