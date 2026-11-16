@@ -149,7 +149,7 @@ def main():
     raw=np.einsum("m,mnc->nc",weights,np.stack([individual_probs[k] for k in kinds]))
     probs=apply_calibrator(raw,cal)
     uniform_raw=np.mean(np.stack([individual_probs[k] for k in kinds]),axis=0)
-    uniform_probs=apply_calibrator(uniform_raw,cal)
+    uniform_probs=uniform_raw
     oof_single_logloss={k:float(log_loss(yo,oofs[k][valid],labels=[0,1,2])) for k in kinds}
     oof_uniform=np.mean(np.stack(preds),axis=0)
     oof_uniform_logloss=float(log_loss(yo,oof_uniform,labels=[0,1,2]))
@@ -164,7 +164,7 @@ def main():
       "oof_uniform_ensemble_logloss":oof_uniform_logloss,
       "oof_optimized_ensemble_logloss":oof_weighted_logloss,
       "ensemble_weights":dict(zip(kinds,weights)),
-      "validation_metrics_by_single_model":{k:metrics(apply_calibrator(individual_probs[k],cal),yv) for k in kinds},
+      "validation_metrics_by_single_model_raw":{k:metrics(individual_probs[k],yv) for k in kinds},
       "validation_uniform_ensemble":metrics(uniform_probs,yv),
       "calibration_selection":"lowest log loss on final two training OOF folds; candidates none/temperature/Platt/isotonic",
       "calibration_oof_logloss":cal_scores,"selected_calibration":chosen,"validation":metrics(probs,yv)}
