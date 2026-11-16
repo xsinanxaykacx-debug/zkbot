@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
-"""Command-line predictor for one upcoming UTC match date using frozen XG18 weights."""
+"""Self-contained CLI predictor for one upcoming UTC match date using frozen XG18 weights."""
 from __future__ import annotations
 
 import argparse
+import hashlib
 import sys
+import zipfile
 from pathlib import Path
 
 import numpy as np
@@ -11,6 +13,43 @@ import pandas as pd
 
 ROOT = Path(__file__).resolve().parents[1]
 FROZEN_SRC = ROOT / "frozen_src"
+ARCHIVE_SHA256 = "d8d62f65b8887084a80d1da84ec6a758c401257172e50d5ef8a7137cc1dbc7aa"
+MODULE_SHA256 = "79d89fa9491643590b96eb0e4a2761b0612a245247bd1fe40ed6b29710071e6e"
+PARTS = [
+    "research/xg18-frozen-source.zip.part00",
+    "research/xg18-frozen-source.zip.part01",
+    "research/xg18-frozen-source.zip.part02",
+    "research/xg18-frozen-source.zip.part03",
+    "research/xg18-frozen-source.zip.part04",
+    "research/xg18-frozen-source.zip.part05",
+    "research/xg18-frozen-source.zip.part06",
+    "research/xg18-frozen-source.zip.part06b",
+    "research/xg18-frozen-source.zip.part07",
+    "research/xg18-frozen-source.zip.part08",
+    "research/xg18-frozen-source.zip.part09",
+]
+
+
+def ensure_frozen_source() -> None:
+    module = FROZEN_SRC / "xg18_frozen_model.py"
+    if module.is_file() and hashlib.sha256(module.read_bytes()).hexdigest() == MODULE_SHA256:
+        return
+    archive = ROOT / "xg18-frozen-source.zip"
+    archive.write_bytes(b"".join((ROOT / part).read_bytes() for part in PARTS))
+    archive_hash = hashlib.sha256(archive.read_bytes()).hexdigest()
+    if archive_hash != ARCHIVE_SHA256:
+        raise RuntimeError(f"Frozen source archive hash mismatch: {archive_hash}")
+    with zipfile.ZipFile(archive) as zf:
+        bad = zf.testzip()
+        if bad is not None:
+            raise RuntimeError(f"Frozen source ZIP CRC failure: {bad}")
+        zf.extractall(FROZEN_SRC)
+    actual = hashlib.sha256(module.read_bytes()).hexdigest()
+    if actual != MODULE_SHA256:
+        raise RuntimeError(f"Frozen model module hash mismatch: {actual}")
+
+
+ensure_frozen_source()
 sys.path.insert(0, str(FROZEN_SRC))
 import xg18_frozen_model as frozen  # noqa: E402
 
@@ -50,9 +89,7 @@ def main() -> int:
 
     history = frozen.prep(history_raw)
     fixtures_input = fixtures_raw.copy()
-    # The frozen Elo replay requires target columns structurally. Dummy outcomes are safe
-    # only because this invocation is restricted to one fixture date and Elo predicts the
-    # entire date before applying any outcomes from that date.
+    # Elo predicts all fixtures on the date before that date's results are applied.
     fixtures_input["FTHG"] = 0
     fixtures_input["FTAG"] = 0
     fixtures = frozen.prep(fixtures_input)
@@ -68,14 +105,14 @@ def main() -> int:
         parser.error("Duplicate fixture rows detected")
 
     model = frozen.TeamPoisson(alpha=10.0).fit(history)
-    lh, la = model.predict(fixtures)
-    joint = frozen.score_joint(lh, la, rho=0.0, maxg=12)
-    probs_poisson = frozen.metrics_joint(
+    lam_home, lam_away = model.predict(fixtures)
+    joint = frozen.score_joint(lam_home, lam_away, rho=0.0, maxg=12)
+    poisson_probs = frozen.metrics_joint(
         np.zeros(len(fixtures)), np.zeros(len(fixtures)), joint
     )["probs_1x2"]
-    probs_elo = frozen.run_elo(history, fixtures, K=32.0, ha=80.0, nu=0.8)
+    elo_probs = frozen.run_elo(history, fixtures, K=32.0, ha=80.0, nu=0.8)
 
-    probs = W_TEAM_POISSON * probs_poisson + W_ELO * probs_elo
+    probs = W_TEAM_POISSON * poisson_probs + W_ELO * elo_probs
     probs = np.clip(probs, 1e-15, 1.0)
     probs /= probs.sum(axis=1, keepdims=True)
     pmax = probs.max(axis=1)
@@ -93,15 +130,15 @@ def main() -> int:
         "PREDICTION": OUTCOME_LABELS[pred],
         "CONFIDENCE_AT_OR_ABOVE_THRESHOLD": pmax >= args.confidence_threshold,
         "THRESHOLD": args.confidence_threshold,
-        "LAMBDA_HOME": lh,
-        "LAMBDA_AWAY": la,
+        "LAMBDA_HOME": lam_home,
+        "LAMBDA_AWAY": lam_away,
     })
     args.output.parent.mkdir(parents=True, exist_ok=True)
     result.to_csv(args.output, index=False)
     print(result.to_string(index=False))
     print(f"Rows: {len(result)} | flagged >= {args.confidence_threshold:.0%}: "
           f"{int((pmax >= args.confidence_threshold).sum())}")
-    print("Note: confidence threshold is not a verified hit-rate guarantee.")
+    print("The confidence threshold is not a guaranteed hit rate.")
     return 0
 
 
