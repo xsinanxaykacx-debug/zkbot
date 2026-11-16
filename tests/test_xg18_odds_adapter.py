@@ -32,6 +32,8 @@ class OddsAdapterTests(unittest.TestCase):
         row = normalize(self.record, MAPPING, "pinnodds", "third_party")
         self.assertEqual(row["MatchID"], "fixture-1")
         self.assertEqual(row["provider_id"], "pinnodds")
+        self.assertEqual(row["provider_event_id"], "")
+        self.assertEqual(row["pinnacle_source_id"], "")
         self.assertEqual(row["source"], "third_party")
         self.assertEqual(row["captured_at"], "2026-11-20T17:58:30Z")
         self.assertFalse(row["is_closing"])
@@ -106,7 +108,7 @@ class OddsAdapterTests(unittest.TestCase):
         self.assertEqual(row["provider_home_team"], "")
 
     def test_match_map_requires_exact_one_to_one_ids(self):
-        rows = [{"pinnacle_source_id": "event-a"}]
+        rows = [{"provider_event_id": "event-a"}]
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / "map.csv"
             path.write_text(
@@ -139,7 +141,7 @@ class OddsAdapterTests(unittest.TestCase):
                 apply_match_map(rows, str(path))
 
     def test_match_map_rejects_unmapped_event(self):
-        rows = [{"pinnacle_source_id": "unknown-event"}]
+        rows = [{"provider_event_id": "unknown-event"}]
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / "map.csv"
             path.write_text(
