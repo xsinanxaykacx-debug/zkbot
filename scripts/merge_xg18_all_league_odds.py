@@ -26,7 +26,8 @@ LEAGUE_TO_CODE = {
     "netherlands eredivisie":"N1", "eredivisie":"N1", "holland eredivisie":"N1",
     "portugal liga portugal":"P1", "primeira liga":"P1", "liga portugal":"P1",
     "belgium pro league":"B1", "belgian pro league":"B1", "belcika pro league":"B1",
-    "turkiye super lig":"T1", "super lig":"T1", "turkey super lig":"T1",\n    "turkiye 1 lig":"T2", "turkey 1 lig":"T2",
+    "turkiye super lig":"T1", "super lig":"T1", "turkey super lig":"T1",
+    "turkiye 1 lig":"T2", "turkey 1 lig":"T2",
 }
 ALIASES = {
     "manchester united":"man united","man utd":"man united","manchester city":"man city",
