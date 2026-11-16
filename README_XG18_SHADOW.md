@@ -24,21 +24,21 @@ Install the pinned packages from `research/xg18-frozen-source/requirements-xg18-
 
 - `history.csv`: fixed 15,734 train+validation rows; columns include League, Date, HomeTeam, AwayTeam, FTHG, FTAG.
 - `fixtures.csv`: upcoming fixtures; columns MatchID, League, Date, HomeTeam, AwayTeam. MatchID must be stable and unique. Date must be UTC. Fixtures must be future-dated and after fixed history.
-- `odds.csv`: MatchID, captured_at, home_odds, draw_odds, away_odds, source, is_closing. Source must be Pinnacle; decimal odds >1; timestamp before kickoff. Mark is_closing=true only if the provider identifies the snapshot as the closing price. Fair probabilities use proportional normalization of inverse odds.
+- `odds.csv`: MatchID, kickoff_utc, captured_at, home_odds, draw_odds, away_odds, source, provider_id, pinnacle_source_id, snapshot_kind, is_closing. `source` is `pinnacle` only for the official Pinnacle API (`provider_id=pinnacle_official`); all independent services must use `source=third_party` and their own `provider_id` (for example `pinnapi` or `pinnodds`). `pinnacle_source_id` is optional and must never be fabricated. `captured_at` is the timestamp supplied by that provider, not necessarily Pinnacle event time. Decimal odds must be >1 and timestamps must precede kickoff. Only an official Pinnacle response may set `is_closing=true` for official closing metrics. Fair probabilities use proportional normalization of inverse odds.
 - `results.csv`: MatchID, FTHG, FTAG, result_available_at. Add results only after they are actually available.
 
-Templates are in `research/shadow_*_template.csv`.
+Templates are in `research/shadow_*_template.csv`. An example configurable API field map is in `research/odds_api_mapping.example.json`; adapt it to the provider documentation before use.
 
 ## Commands
 
 ```bash
 python scripts/xg18_shadow.py predict --history data/xg18_train_validation.csv --fixtures data/upcoming_fixtures.csv --ledger shadow/shadow_ledger.jsonl
-python scripts/xg18_shadow.py add-odds --input data/pinnacle_closing_odds.csv --ledger shadow/shadow_ledger.jsonl
+python scripts/xg18_odds_adapter.py api --url "$ODDS_API_URL" --provider-id pinnapi --api-key-env PINNAPI_API_KEY --records-path data --mapping research/provider_mapping.json --output data/normalized_odds.csv\npython scripts/xg18_shadow.py add-odds --input data/normalized_odds.csv --ledger shadow/shadow_ledger.jsonl
 python scripts/xg18_shadow.py settle --input data/settled_results.csv --ledger shadow/shadow_ledger.jsonl
 python scripts/xg18_shadow.py report --ledger shadow/shadow_ledger.jsonl --output reports/xg18_shadow_report.json
 ```
 
-Predictions, odds snapshots, and results are append-only events. Duplicate predictions, results, or closing prices are rejected. Keep the ledger local and backed up; do not hand-edit it. No Pinnacle scraping or API feed is included: the first release accepts timestamped CSV snapshots only.
+Predictions, odds snapshots, and results are append-only events. Duplicate predictions, results, or official closing prices are rejected. The adapter supports CSV normalization and generic HTTPS JSON GET ingestion using a user-supplied field map; it does not contain provider-specific endpoints, credentials, or a claim of provider verification. API keys are read only from environment variables and are never written to the ledger. Keep the ledger local and backed up; do not hand-edit it. No scraping or unauthorized endpoints are used. API records must first be normalized to the common CSV schema; that CSV is then consumed by `add-odds`.\n\n`observed_closing_proxy` is calculated separately in reports: the latest provider snapshot at or before kickoff, no more than 120 seconds old. It is explicitly labelled a proxy and is never counted as official Pinnacle closing. Independent providers remain unverified until real fixtures, timestamp semantics, odds, coverage, and licensing are checked.
 
 ## Reporting and gate
 
