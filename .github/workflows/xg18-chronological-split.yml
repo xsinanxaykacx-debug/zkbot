@@ -1,0 +1,36 @@
+name: xg18 chronological split
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - research/xg18-chronological-split
+    paths:
+      - "xg18.csv"
+      - "scripts/build_xg18_split.py"
+      - ".github/workflows/xg18-chronological-split.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  build-split:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout research branch
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install dependency
+        run: python -m pip install --disable-pip-version-check pandas
+      - name: Build and validate split manifest
+        run: python scripts/build_xg18_split.py
+      - name: Upload split manifest and row assignments
+        uses: actions/upload-artifact@v4
+        with:
+          name: zk2-xg18-chronological-split-v1
+          path: split-results/
+          if-no-files-found: error
+          retention-days: 90
