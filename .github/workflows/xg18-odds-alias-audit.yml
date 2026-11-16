@@ -1,0 +1,43 @@
+name: XG18 odds alias audit (merge only)
+on:
+  push:
+    branches: [work/xg18-v3-odds-alias-audit]
+    paths:
+      - "scripts/merge_xg18_all_league_odds.py"
+      - "tests/test_odds_team_aliases.py"
+      - ".github/workflows/xg18-odds-alias-audit.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  alias-audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Install audit dependency
+        run: python -m pip install pandas pytest
+      - name: Download official non-test chronological split
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh run download 43848824932 --repo ${{ github.repository }} --name zk2-xg18-split-v1-non-test --dir data
+          test -s data/xg18_train.csv
+          test -s data/xg18_val.csv
+      - name: Test E2 and D2 aliases
+        run: PYTHONPATH=scripts python -m pytest -q tests/test_odds_team_aliases.py
+      - name: Rebuild official train-validation odds merge only
+        run: |
+          python scripts/merge_xg18_all_league_odds.py --xg xg18.csv --odds-dir . --include-csv data/xg18_train.csv --include-csv data/xg18_val.csv --out artifacts/xg18_odds
+      - uses: actions/upload-artifact@v4
+        with:
+          name: xg18-v3-alias-audit-merge-only
+          path: |
+            artifacts/xg18_odds/merge_report.json
+            artifacts/xg18_odds/xg18_with_all_league_odds.csv
+          if-no-files-found: error
+          retention-days: 90
