@@ -155,10 +155,13 @@ def main() -> None:
     xg["_date"] = pd.to_datetime(xg["Date"], errors="coerce", utc=True).dt.tz_convert(None).dt.normalize()
     eligible = xg.loc[xg["_date"].notna() & (xg["_date"] <= CUTOFF)].copy()
     by_key = defaultdict(list)
+    by_team_key = defaultdict(list)
     for rec in records:
         by_key[(rec["date"], rec["league_code"], rec["home_key"], rec["away_key"])].append(rec)
+        by_team_key[(rec["league_code"], rec["home_key"], rec["away_key"])].append(rec)
 
-    match_rows, statuses = [], Counter()
+    match_rows, unmatched_rows, statuses = [], [], Counter()
+    near_date_counts = Counter()
     by_league = defaultdict(Counter)
     for idx, row in eligible.iterrows():
         code = LEAGUE_TO_CODE.get(str(row["League"]), "UNMAPPED")
@@ -184,8 +187,31 @@ def main() -> None:
             status = "score_mismatch"
         else:
             status = "no_candidate"
+        near_date = []
+        if not chosen and code != "UNMAPPED":
+            same_teams = by_team_key.get((code, team(row["HomeTeam"]), team(row["AwayTeam"])), [])
+            for candidate in same_teams:
+                delta = abs((candidate["date"] - row["_date"]).days)
+                if delta <= 1 and pd.notna(row["FTHG"]) and pd.notna(row["FTAG"]) and row["FTHG"] == candidate["home_score"] and row["FTAG"] == candidate["away_score"]:
+                    near_date.append((delta, candidate))
+        if near_date:
+            near_date_counts[str(row["League"])] += 1
         statuses[status] += 1
         by_league[str(row["League"])][status] += 1
+        if not chosen:
+            nearest = sorted(near_date, key=lambda x: x[0])[0] if near_date else None
+            unmatched_rows.append({
+                "xg_row": int(idx), "date": str(pd.Timestamp(row["_date"]).date()),
+                "league": row["League"], "league_code": code,
+                "home": row["HomeTeam"], "away": row["AwayTeam"],
+                "home_score": row["FTHG"], "away_score": row["FTAG"],
+                "status": status, "near_date_score_confirmed": bool(nearest),
+                "nearest_date_delta_days": nearest[0] if nearest else None,
+                "near_date_source_file": nearest[1]["file"] if nearest else None,
+                "near_date_source_date": str(nearest[1]["date"].date()) if nearest else None,
+                "near_date_source_home": nearest[1]["home"] if nearest else None,
+                "near_date_source_away": nearest[1]["away"] if nearest else None,
+            })
         if chosen:
             match_rows.append({
                 "xg_row": int(idx), "match_id": row.get("MatchID"),
@@ -225,6 +251,8 @@ def main() -> None:
         "league_csv_inventory": inventory,
         "total_odds_source_rows_with_valid_date": int(len(records)),
         "status_counts": dict(statuses),
+        "near_date_score_confirmed_unmatched_by_league": dict(near_date_counts),
+        "near_date_score_confirmed_unmatched_total": int(sum(near_date_counts.values())),
         "by_xg_league": {
             league: {"total": int(sum(c.values())), "matched": int(c["matched"] + c["matched_duplicate_identical"]),
                      "statuses": dict(c)}
@@ -237,6 +265,7 @@ def main() -> None:
     args.out.mkdir(parents=True, exist_ok=True)
     (args.out / "league_odds_inventory.json").write_text(json.dumps(summary, ensure_ascii=False, indent=2), encoding="utf-8")
     matches.to_csv(args.out / "xg18_all_league_odds_matches.csv", index=False, encoding="utf-8")
+    pd.DataFrame(unmatched_rows).to_csv(args.out / "xg18_unmatched_league_odds_rows.csv", index=False, encoding="utf-8")
     print(json.dumps(summary, ensure_ascii=False, indent=2))
 
 if __name__ == "__main__":
