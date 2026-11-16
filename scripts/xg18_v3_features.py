@@ -21,7 +21,7 @@ def _market_features(matches: pd.DataFrame) -> pd.DataFrame:
         out[f"market_{prefix}_p_home"]=implied[:,0]
         out[f"market_{prefix}_p_draw"]=implied[:,1]
         out[f"market_{prefix}_p_away"]=implied[:,2]
-        out[f"market_{prefix}_overround"]=margin
+        out[f"market_{prefix}_1x2_overround"]=margin
         out[f"market_{label}_present"]=valid.astype(float)
     def add_ou(prefix, cols, label):
         odds=raw.reindex(columns=cols).apply(pd.to_numeric,errors="coerce").to_numpy(dtype=float)
@@ -35,7 +35,7 @@ def _market_features(matches: pd.DataFrame) -> pd.DataFrame:
             margin[valid]=total-1.0
         out[f"market_{prefix}_p_over25"]=implied[:,0]
         out[f"market_{prefix}_p_under25"]=implied[:,1]
-        out[f"market_{prefix}_overround"]=margin
+        out[f"market_{prefix}_ou25_overround"]=margin
         out[f"market_{label}_present"]=valid.astype(float)
     add_1x2("avg",["odds_AvgH","odds_AvgD","odds_AvgA"],"avg_1x2_present")
     add_1x2("b365",["odds_B365H","odds_B365D","odds_B365A"],"b365_1x2_present")
