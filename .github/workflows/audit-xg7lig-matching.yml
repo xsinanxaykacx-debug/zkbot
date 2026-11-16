@@ -50,5 +50,6 @@ jobs:
             audit-results/xg18_legacy_matched_odds.csv
             audit-results/all-leagues/league_odds_inventory.json
             audit-results/all-leagues/xg18_all_league_odds_matches.csv
+            audit-results/all-leagues/xg18_unmatched_league_odds_rows.csv
           if-no-files-found: error
           retention-days: 30
