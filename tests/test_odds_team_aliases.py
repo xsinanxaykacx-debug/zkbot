@@ -22,6 +22,21 @@ def test_league_one_odds_aliases():
         "Ipswich Town": "ipswich",
         "Lincoln City": "lincoln",
         "Exeter City": "exeter",
+        "Burton Albion": "burton",
+        "Shrewsbury Town": "shrewsbury",
+        "Northampton Town": "northampton",
+        "Wigan Athletic": "wigan",
+        "Cheltenham Town": "cheltenham",
+        "Plymouth Argyle": "plymouth",
+        "Huddersfield Town": "huddersfield",
+        "Stockport County": "stockport",
+        "Rotherham United": "rotherham",
+        "Carlisle United": "carlisle",
+        "Birmingham City": "birmingham",
+        "Cardiff City": "cardiff",
+        "Bradford City": "bradford",
+        "Doncaster Rovers": "doncaster",
+        "Luton Town": "luton",
     }
     for source, expected in cases.items():
         assert MODULE.team(source) == expected
@@ -37,6 +52,10 @@ def test_germany_2_bundesliga_odds_aliases():
         "Hamburger SV": "hamburg",
         "Karlsruher SC": "karlsruhe",
         "SC Paderborn 07": "paderborn",
+        "FC Heidenheim": "heidenheim",
+        "VfL Osnabrück": "osnabruck",
+        "Wehen Wiesbaden": "wehen",
+        "Dynamo Dresden": "dresden",
         "St. Pauli": "st pauli",
     }
     for source, expected in cases.items():
