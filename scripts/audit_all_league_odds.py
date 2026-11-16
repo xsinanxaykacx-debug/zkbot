@@ -35,28 +35,58 @@ LEAGUE_TO_CODE = {
 }
 CODE_TO_LEAGUE = {v: k for k, v in LEAGUE_TO_CODE.items()}
 TEAM_ALIASES = {
-    "man utd": "manchester united", "man united": "manchester united",
-    "man city": "manchester city", "nottm forest": "nottingham forest",
-    "nott m forest": "nottingham forest", "wolves": "wolverhampton wanderers",
-    "spurs": "tottenham hotspur", "newcastle": "newcastle united",
-    "west brom": "west bromwich albion", "qpr": "queens park rangers",
-    "ath madrid": "atletico madrid", "atletico": "atletico madrid",
-    "ath bilbao": "athletic bilbao", "sociedad": "real sociedad",
-    "betis": "real betis", "sevilla fc": "sevilla",
-    "inter": "internazionale", "inter milan": "internazionale",
-    "ac milan": "milan", "roma": "as roma",
-    "bayern munich": "bayern munchen", "koln": "fc koln",
-    "monchengladbach": "borussia monchengladbach",
-    "psg": "paris saint germain", "paris sg": "paris saint germain",
-    "marseille": "olympique marseille", "lyon": "olympique lyonnais",
-    "caykur rizespor": "rizespor", "gaziantep": "gaziantep fk",
-    "istanbul basaksehir": "basaksehir", "basaksehir fk": "basaksehir",
-    "kasimpasa istanbul": "kasimpasa", "mke ankaragucu": "ankaragucu",
-    "corum": "corum fk", "corum belediyespor": "corum fk",
-    "st truiden": "sint truiden", "st. truiden": "sint truiden",
-    "waregem": "zulte waregem", "vallecano": "rayo vallecano",
-    "espanol": "espanyol", "spal": "spal 2013",
-    "hertha": "hertha berlin", "bochum": "vfl bochum",
+    # England
+    "man utd": "man united", "manchester united": "man united",
+    "man city": "man city", "manchester city": "man city",
+    "tottenham hotspur": "tottenham", "wolverhampton wanderers": "wolves",
+    "afc bournemouth": "bournemouth", "leicester city": "leicester",
+    "brighton hove albion": "brighton", "west ham united": "west ham",
+    "newcastle united": "newcastle", "leeds united": "leeds",
+    "nottingham forest": "nott m forest", "nottm forest": "nott m forest",
+    "sheffield wednesday": "sheffield weds", "wycombe wanderers": "wycombe",
+    "burton albion": "burton", "derby county": "derby",
+    "oxford united": "oxford", "shrewsbury town": "shrewsbury",
+    "lincoln city": "lincoln", "ipswich town": "ipswich",
+    "cheltenham town": "cheltenham", "cambridge united": "cambridge",
+    "bristol rovers": "bristol rvs", "forest green rovers": "forest green",
+    "plymouth argyle": "plymouth", "accrington stanley": "accrington",
+    "charlton athletic": "charlton", "peterborough united": "peterboro",
+    "bolton wanderers": "bolton",
+    # Spain
+    "celta vigo": "celta", "espanyol": "espanol",
+    "athletic club": "ath bilbao", "atletico madrid": "ath madrid",
+    "real valladolid": "valladolid", "real sociedad": "sociedad",
+    "real betis": "betis",
+    # Germany
+    "bayern munchen": "bayern munich", "eintracht frankfurt": "ein frankfurt",
+    "borussia dortmund": "dortmund", "borussia monchengladbach": "m gladbach",
+    "vfb stuttgart": "stuttgart", "bayer leverkusen": "leverkusen",
+    "1 fc koln": "fc koln", "hertha bsc": "hertha", "mainz 05": "mainz",
+    "hannover 96": "hannover", "jahn regensburg": "regensburg",
+    "arminia bielefeld": "bielefeld", "1 fc nurnberg": "nurnberg",
+    "eintracht braunschweig": "braunschweig", "hamburger sv": "hamburg",
+    "fc heidenheim": "heidenheim", "karlsruher sc": "karlsruhe",
+    # France
+    "ac ajaccio": "ajaccio", "paris saint germain": "paris sg",
+    "clermont foot": "clermont",
+    # Italy
+    "hellas verona": "verona",
+    # Netherlands
+    "sc heerenveen": "heerenveen", "fortuna sittard": "for sittard",
+    "rkc waalwijk": "waalwijk", "fc groningen": "groningen",
+    "fc volendam": "volendam", "nec nijmegen": "nijmegen",
+    "fc utrecht": "utrecht", "fc twente": "twente",
+    # Portugal
+    "fc porto": "porto", "sporting cp": "sporting",
+    "sp braga": "braga", "vitoria de guimaraes": "guimaraes",
+    "pacos de ferreira": "pacos ferreira", "casa pia ac": "casa pia",
+    # Belgium
+    "standard liege": "standard", "sporting charleroi": "charleroi",
+    "zulte waregem": "waregem", "union st gilloise": "st gilloise",
+    "kv mechelen": "mechelen", "royal antwerp": "antwerp",
+    # Türkiye
+    "fatih karagumruk": "karagumruk", "adana demirspor": "ad demirspor",
+    "basaksehir": "buyuksehyr", "gaziantep fk": "gaziantep",
 }
 
 def norm(value: object) -> str:
